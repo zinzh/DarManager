@@ -126,3 +126,5 @@ docs/_build/
 uploads/
 static/uploads/
 media/
+
+CURSOR_MEMORY.md
