@@ -1,0 +1,162 @@
+# DarManager - Guesthouse Management System
+
+A modern, mobile-first property management system tailored for Lebanese guesthouse owners who manage bookings via WhatsApp, Instagram, phone calls, and local offline methods.
+
+## 🏗️ Tech Stack
+
+- **Frontend**: Next.js 14 with React 18, TypeScript, and Tailwind CSS
+- **Backend**: Python FastAPI with async support
+- **Database**: PostgreSQL 15 with UUID primary keys
+- **Proxy**: Nginx for reverse proxy and static file serving
+- **Containerization**: Docker Compose for easy development
+- **Deployment**: EC2-ready with container orchestration
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Docker and Docker Compose installed
+- Git for version control
+
+### Development Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd DarManager
+   ```
+
+2. **Start the development environment**
+   ```bash
+   docker-compose up --build
+   ```
+
+3. **Access the application**
+   - Frontend: http://localhost (via Nginx)
+   - API Documentation: http://localhost/api/docs
+   - Database: localhost:5432
+
+### Container Architecture
+
+```
+nginx (port 80) -> frontend (port 3000)
+                -> api (port 8000)
+database (port 5432) <- api
+```
+
+## 📱 Features Roadmap
+
+### Phase 1: Foundation ✅
+- [x] Project structure and Docker setup
+- [x] Basic Next.js frontend with Tailwind CSS
+- [x] FastAPI backend skeleton
+- [x] PostgreSQL database with initial schema
+- [x] Nginx reverse proxy configuration
+
+### Phase 2: Core Features (Next)
+- [ ] User authentication and authorization
+- [ ] Property and room management
+- [ ] Manual booking entry system
+- [ ] Basic calendar view
+- [ ] Payment confirmation workflow
+
+### Phase 3: Advanced Features (Future)
+- [ ] WhatsApp integration for guest communication
+- [ ] Automated messaging templates
+- [ ] OCR for receipt processing
+- [ ] Revenue and occupancy dashboard
+- [ ] PDF invoice generation
+- [ ] Data export functionality
+
+### Phase 4: Optimization (Future)
+- [ ] PWA features for mobile
+- [ ] Offline capability
+- [ ] Performance optimization
+- [ ] Mobile app considerations
+
+## 🔧 Development Commands
+
+```bash
+# Start all services
+docker-compose up --build
+
+# Start in background
+docker-compose up -d
+
+# View logs
+docker-compose logs -f [service-name]
+
+# Stop services
+docker-compose down
+
+# Rebuild specific service
+docker-compose build [service-name]
+
+# Access database
+docker-compose exec database psql -U darmanager_user -d darmanager
+```
+
+## 📁 Project Structure
+
+```
+DarManager/
+├── backend/                 # FastAPI application
+│   ├── Dockerfile
+│   ├── main.py             # API entry point
+│   └── requirements.txt    # Python dependencies
+├── frontend/               # Next.js application
+│   ├── src/
+│   │   ├── app/           # App router pages
+│   │   └── components/    # Reusable components
+│   ├── Dockerfile
+│   ├── package.json
+│   └── tailwind.config.js
+├── nginx/                  # Nginx configuration
+│   ├── nginx.conf
+│   └── default.conf
+├── database/              # Database initialization
+│   └── init.sql
+└── docker-compose.yml     # Container orchestration
+```
+
+## 🎯 Lebanese Market Focus
+
+This system is specifically designed for the Lebanese market with:
+- Cash-based payment support (OMT, Whish, bank transfers)
+- WhatsApp integration for customer communication
+- Multi-currency support (LBP/USD)
+- Offline-first approach for unstable internet
+- Mobile-optimized interface for on-the-go management
+
+## 🔒 Security Considerations
+
+- JWT authentication for API endpoints
+- PostgreSQL with proper indexing and constraints
+- Nginx security headers and rate limiting
+- Container isolation and non-root user execution
+- Environment variable management for secrets
+
+## 📊 Database Schema
+
+The initial schema includes:
+- **Properties**: Guesthouse information and settings
+- **Rooms**: Room details, pricing, and status
+- **Guests**: Customer information and contact details
+- **Bookings**: Reservation management with status tracking
+- **Payments**: Payment tracking with receipt storage
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📝 License
+
+This project is proprietary software for guesthouse management in Lebanon.
+
+---
+
+**Status**: 🟢 Active Development - Foundation Complete
+**Next Steps**: Implementing user authentication and property management
