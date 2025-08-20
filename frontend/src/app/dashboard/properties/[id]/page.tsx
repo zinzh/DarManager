@@ -23,6 +23,8 @@ interface Property {
   phone?: string;
   email?: string;
   wifi_password?: string;
+  price_per_night?: number;
+  max_guests?: number;
   created_at: string;
   updated_at: string;
 }
@@ -258,6 +260,28 @@ export default function PropertyDetailsPage() {
                 </div>
               )}
               
+              {property.price_per_night && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">
+                    Price per Night
+                  </h3>
+                  <p className="text-gray-900 text-lg font-semibold">
+                    ${property.price_per_night.toFixed(2)} USD
+                  </p>
+                </div>
+              )}
+              
+              {property.max_guests && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">
+                    Maximum Guests
+                  </h3>
+                  <p className="text-gray-900">
+                    {property.max_guests} guest{property.max_guests !== 1 ? 's' : ''}
+                  </p>
+                </div>
+              )}
+
               {property.wifi_password && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-500 mb-1">
@@ -348,10 +372,22 @@ export default function PropertyDetailsPage() {
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           if (window.confirm(`Delete room "${room.name}"?`)) {
-                            // TODO: Implement room deletion
-                            alert('Room deletion not implemented yet');
+                            const token = localStorage.getItem('access_token');
+                            try {
+                              const response = await fetch(`/api/rooms/${room.id}`, {
+                                method: 'DELETE',
+                                headers: { 'Authorization': `Bearer ${token}` }
+                              });
+                              if (response.ok) {
+                                setRooms(rooms.filter(r => r.id !== room.id));
+                              } else {
+                                alert('Failed to delete room');
+                              }
+                            } catch (error) {
+                              alert('Network error while deleting room');
+                            }
                           }
                         }}
                         className="text-gray-400 hover:text-red-600"

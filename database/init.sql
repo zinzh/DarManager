@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS properties (
     phone VARCHAR(50),
     email VARCHAR(255),
     wifi_password VARCHAR(255),
+    price_per_night NUMERIC(10, 2),
+    max_guests INTEGER DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

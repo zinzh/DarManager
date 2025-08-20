@@ -90,6 +90,8 @@ class PropertyBase(BaseModel):
     phone: Optional[str] = None
     email: Optional[EmailStr] = None
     wifi_password: Optional[str] = None
+    price_per_night: Optional[Decimal] = None
+    max_guests: int = 1
 
 class PropertyCreate(PropertyBase):
     pass
@@ -101,6 +103,8 @@ class PropertyUpdate(BaseModel):
     phone: Optional[str] = None
     email: Optional[EmailStr] = None
     wifi_password: Optional[str] = None
+    price_per_night: Optional[Decimal] = None
+    max_guests: Optional[int] = None
 
 class Property(PropertyBase):
     id: UUID4
@@ -119,8 +123,14 @@ class RoomBase(BaseModel):
     status: RoomStatusSchema = RoomStatusSchema.AVAILABLE
     keybox_code: Optional[str] = None
 
-class RoomCreate(RoomBase):
+class RoomCreate(BaseModel):
     property_id: UUID4
+    name: str
+    description: Optional[str] = None
+    capacity: int = 1
+    price_per_night: Optional[Decimal] = None
+    status: str = "available"  # Use string instead of enum for creation
+    keybox_code: Optional[str] = None
 
 class RoomUpdate(BaseModel):
     name: Optional[str] = None

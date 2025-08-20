@@ -22,6 +22,8 @@ interface Property {
   phone?: string;
   email?: string;
   wifi_password?: string;
+  price_per_night?: number;
+  max_guests?: number;
   created_at: string;
   updated_at: string;
 }
@@ -210,6 +212,18 @@ export default function PropertiesPage() {
                       </div>
                     )}
                     
+                    {property.price_per_night && (
+                      <div className="flex items-center text-sm font-semibold text-green-600">
+                        <span>${property.price_per_night.toFixed(2)}/night</span>
+                      </div>
+                    )}
+                    
+                    {property.max_guests && (
+                      <div className="flex items-center text-sm text-gray-600">
+                        <span>Up to {property.max_guests} guest{property.max_guests !== 1 ? 's' : ''}</span>
+                      </div>
+                    )}
+
                     {property.wifi_password && (
                       <div className="flex items-center text-sm text-gray-600">
                         <WifiIcon className="h-4 w-4 mr-2 flex-shrink-0" />

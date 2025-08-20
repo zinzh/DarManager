@@ -31,27 +31,17 @@ Starting with basic functioning stack, then adding features incrementally:
 4. ✅ Mobile-responsive UI with proper alignment
 5. ✅ Login/logout functionality with token management
 
-### Phase 3: Property Management UI (🚧 CURRENT)
-1. ✅ Property listing and management interface
-   - Property cards with edit/delete actions
-   - Empty state for new users
-   - Navigation from dashboard
-   - Backend DELETE endpoint
-   - Fixed UI alignment issues (rooms icon)
-   - Fixed database connection pool issues
-2. ✅ Add/Edit property forms with validation
-   - Complete form validation (name required, email/phone format)
-   - Add property page (/dashboard/properties/new)
-   - Edit property page (/dashboard/properties/[id]/edit)
-   - Backend GET and PUT endpoints for single property
-   - Error handling and loading states
-3. ✅ Property details view with room list
-   - Complete property information display
-   - Rooms listing with status indicators
-   - Edit/delete property actions
-   - Add room functionality (links ready)
-   - Empty state for properties without rooms
-4. ⏳ Room management interface (add/edit room forms)
+### Phase 3: Property Management (✅ COMPLETED)
+- ✅ Property listing, add/edit/delete
+- ✅ Property details with room management
+- ✅ Room add/delete with full CRUD
+- ✅ Complete backend API for properties and rooms
+
+### Phase 4: Core Booking System (🚧 NEXT)
+1. ⏳ Guest management (profiles, contact info)
+2. ⏳ Booking creation and management
+3. ⏳ Calendar view for availability
+4. ⏳ Payment tracking workflow
 
 ### Known Issues Fixed
 - ✅ Rooms icon alignment in dashboard stats
@@ -163,10 +153,38 @@ DarManager/
 
 **Next Development Priority**: Property Add/Edit Forms
 
-**Recent Features Added** (This Session):
-- Property add/edit forms with complete validation
-- Property details page with room listing
-- Backend GET/PUT endpoints for single property
-- Room status indicators and display
-- Navigation flow: Properties → Details → Edit
-- Database connection pool issues resolved
+**COMPLETED**: Property & Room Management System
+- Full CRUD for properties and rooms
+- Form validation and error handling
+- Status tracking and management
+- Complete navigation flow
+
+## **LATEST COMPLETED**: Database Migration & Business Model ✅
+
+### **FIXED Issues**:
+- ✅ Room creation enum error (removed incorrect uppercase conversion)
+- ✅ Room details view enum error (changed Room.status from Enum to String)
+- ✅ Database column error: `properties.price_per_night does not exist`
+- ✅ Missing property-level pricing fields
+- ✅ SQLAlchemy enum mapping conflict (Room status now uses String field)
+
+### **IMPLEMENTED**: Lebanese Business Model Adaptation
+- ✅ Database migration: Added `price_per_night` and `max_guests` columns to properties
+- ✅ Updated all forms (add/edit property) with pricing fields
+- ✅ Property details page shows pricing information
+- ✅ Property listing cards display price and capacity
+- ✅ Whole-property rental model (Lebanese style)
+- ✅ Rooms kept for flexible space management
+
+### **Database Changes**:
+```sql
+ALTER TABLE properties 
+ADD COLUMN price_per_night NUMERIC(10, 2),
+ADD COLUMN max_guests INTEGER DEFAULT 1;
+```
+
+**NEXT SESSION GOALS**:
+1. Guest management system
+2. Property-based booking workflow (whole property rental)
+3. Calendar integration
+4. Payment confirmation system

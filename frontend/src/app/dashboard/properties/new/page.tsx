@@ -18,6 +18,8 @@ interface PropertyFormData {
   phone: string;
   email: string;
   wifi_password: string;
+  price_per_night: string;
+  max_guests: number;
 }
 
 export default function NewPropertyPage() {
@@ -28,7 +30,9 @@ export default function NewPropertyPage() {
     address: '',
     phone: '',
     email: '',
-    wifi_password: ''
+    wifi_password: '',
+    price_per_night: '',
+    max_guests: 1
   });
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Partial<PropertyFormData>>({});
@@ -48,6 +52,14 @@ export default function NewPropertyPage() {
       newErrors.phone = 'Please enter a valid phone number';
     }
 
+    if (formData.price_per_night && isNaN(Number(formData.price_per_night))) {
+      newErrors.price_per_night = 'Price must be a valid number';
+    }
+
+    if (formData.max_guests < 1) {
+      newErrors.max_guests = 'Maximum guests must be at least 1';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -63,13 +75,18 @@ export default function NewPropertyPage() {
 
     try {
       const token = localStorage.getItem('access_token');
+      const submitData = {
+        ...formData,
+        price_per_night: formData.price_per_night ? Number(formData.price_per_night) : null
+      };
+
       const response = await fetch('/api/properties', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(submitData)
       });
 
       if (response.status === 401) {
@@ -97,7 +114,7 @@ export default function NewPropertyPage() {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'max_guests' ? Number(value) : value
     }));
     
     // Clear error when user starts typing
@@ -229,6 +246,48 @@ export default function NewPropertyPage() {
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">{errors.email}</p>
               )}
+            </div>
+
+            {/* Price and Capacity */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="price_per_night" className="block text-sm font-medium text-gray-700 mb-1">
+                  Price per Night (USD)
+                </label>
+                <input
+                  type="number"
+                  id="price_per_night"
+                  name="price_per_night"
+                  min="0"
+                  step="0.01"
+                  className={`input-field ${errors.price_per_night ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  placeholder="100.00"
+                  value={formData.price_per_night}
+                  onChange={handleInputChange}
+                />
+                {errors.price_per_night && (
+                  <p className="mt-1 text-sm text-red-600">{errors.price_per_night}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="max_guests" className="block text-sm font-medium text-gray-700 mb-1">
+                  Maximum Guests
+                </label>
+                <input
+                  type="number"
+                  id="max_guests"
+                  name="max_guests"
+                  min="1"
+                  className={`input-field ${errors.max_guests ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''}`}
+                  placeholder="4"
+                  value={formData.max_guests}
+                  onChange={handleInputChange}
+                />
+                {errors.max_guests && (
+                  <p className="mt-1 text-sm text-red-600">{errors.max_guests}</p>
+                )}
+              </div>
             </div>
 
             {/* WiFi Password */}

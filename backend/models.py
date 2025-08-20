@@ -70,6 +70,8 @@ class Property(Base):
     phone = Column(String(50))
     email = Column(String(255))
     wifi_password = Column(String(255))
+    price_per_night = Column(Numeric(10, 2))  # Property-level pricing
+    max_guests = Column(Integer, default=1)    # Total capacity
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
@@ -86,7 +88,7 @@ class Room(Base):
     description = Column(Text)
     capacity = Column(Integer, default=1)
     price_per_night = Column(Numeric(10, 2))
-    status = Column(Enum(RoomStatus), default=RoomStatus.AVAILABLE)
+    status = Column(String(20), default="available")
     keybox_code = Column(String(50))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

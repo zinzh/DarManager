@@ -243,6 +243,21 @@ async def get_rooms(
     rooms = query.all()
     return rooms
 
+@app.get("/api/rooms/{room_id}", response_model=RoomSchema)
+async def get_room(
+    room_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get a single room by ID."""
+    db_room = db.query(Room).filter(Room.id == room_id).first()
+    if not db_room:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Room not found"
+        )
+    return db_room
+
 @app.post("/api/rooms", response_model=RoomSchema)
 async def create_room(
     room_create: RoomCreate,
@@ -255,6 +270,49 @@ async def create_room(
     db.commit()
     db.refresh(db_room)
     return db_room
+
+@app.put("/api/rooms/{room_id}", response_model=RoomSchema)
+async def update_room(
+    room_id: str,
+    room_update: RoomCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a room."""
+    db_room = db.query(Room).filter(Room.id == room_id).first()
+    if not db_room:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Room not found"
+        )
+    
+    # Update fields
+    update_data = room_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_room, field, value)
+    
+    db.commit()
+    db.refresh(db_room)
+    return db_room
+
+@app.delete("/api/rooms/{room_id}")
+async def delete_room(
+    room_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a room."""
+    db_room = db.query(Room).filter(Room.id == room_id).first()
+    if not db_room:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Room not found"
+        )
+    
+    db.delete(db_room)
+    db.commit()
+    
+    return {"message": "Room deleted successfully"}
 
 # Dashboard endpoint
 @app.get("/api/dashboard", response_model=DashboardStats)
