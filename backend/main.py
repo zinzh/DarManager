@@ -158,6 +158,21 @@ async def get_properties(
     properties = db.query(Property).all()
     return properties
 
+@app.get("/api/properties/{property_id}", response_model=PropertySchema)
+async def get_property(
+    property_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get a single property by ID."""
+    db_property = db.query(Property).filter(Property.id == property_id).first()
+    if not db_property:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Property not found"
+        )
+    return db_property
+
 @app.post("/api/properties", response_model=PropertySchema)
 async def create_property(
     property_create: PropertyCreate,
@@ -167,6 +182,30 @@ async def create_property(
     """Create a new property."""
     db_property = Property(**property_create.dict())
     db.add(db_property)
+    db.commit()
+    db.refresh(db_property)
+    return db_property
+
+@app.put("/api/properties/{property_id}", response_model=PropertySchema)
+async def update_property(
+    property_id: str,
+    property_update: PropertyCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a property."""
+    db_property = db.query(Property).filter(Property.id == property_id).first()
+    if not db_property:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Property not found"
+        )
+    
+    # Update fields
+    update_data = property_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_property, field, value)
+    
     db.commit()
     db.refresh(db_property)
     return db_property

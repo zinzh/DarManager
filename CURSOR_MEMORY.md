@@ -39,9 +39,19 @@ Starting with basic functioning stack, then adding features incrementally:
    - Backend DELETE endpoint
    - Fixed UI alignment issues (rooms icon)
    - Fixed database connection pool issues
-2. ⏳ Add/Edit property forms with validation
-3. ⏳ Property details view with room list
-4. ⏳ Room management interface
+2. ✅ Add/Edit property forms with validation
+   - Complete form validation (name required, email/phone format)
+   - Add property page (/dashboard/properties/new)
+   - Edit property page (/dashboard/properties/[id]/edit)
+   - Backend GET and PUT endpoints for single property
+   - Error handling and loading states
+3. ✅ Property details view with room list
+   - Complete property information display
+   - Rooms listing with status indicators
+   - Edit/delete property actions
+   - Add room functionality (links ready)
+   - Empty state for properties without rooms
+4. ⏳ Room management interface (add/edit room forms)
 
 ### Known Issues Fixed
 - ✅ Rooms icon alignment in dashboard stats
@@ -106,7 +116,14 @@ DarManager/
 │   ├── src/app/               # App router pages
 │   │   ├── page.tsx           # Public homepage
 │   │   ├── login/page.tsx     # Login page
-│   │   └── dashboard/page.tsx # Authenticated dashboard
+│   │   ├── dashboard/
+│   │   │   ├── page.tsx       # Authenticated dashboard
+│   │   │   └── properties/
+│   │   │       ├── page.tsx   # Property listing ✅
+│   │   │       ├── new/page.tsx # Add property form ✅
+│   │   │       └── [id]/
+│   │   │           ├── page.tsx # Property details ✅ NEW
+│   │   │           └── edit/page.tsx # Edit property form ✅
 │   └── ...                    # Config files
 ├── nginx/                      # Reverse proxy config
 ├── database/                   # PostgreSQL init scripts
@@ -146,9 +163,10 @@ DarManager/
 
 **Next Development Priority**: Property Add/Edit Forms
 
-**Recent Bug Fixes** (This Session):
-- Database connection pool configuration improved (removed StaticPool conflicts)
-- SQLAlchemy session handling enhanced  
-- Authentication error handling improved
-- UI component alignment fixed
-- Fixed TypeError with pool_size/max_overflow parameters
+**Recent Features Added** (This Session):
+- Property add/edit forms with complete validation
+- Property details page with room listing
+- Backend GET/PUT endpoints for single property
+- Room status indicators and display
+- Navigation flow: Properties → Details → Edit
+- Database connection pool issues resolved
