@@ -13,11 +13,23 @@ export default function AccessPage() {
   const router = useRouter();
   const [subdomain, setSubdomain] = useState('');
 
-  const handleSubdomainAccess = () => {
+  const handleSubdomainAccess = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
     if (subdomain.trim()) {
-      // In development, redirect to subdomain.localhost
-      // In production, this would be subdomain.darmanager.com
-      window.location.href = `http://${subdomain.toLowerCase()}.localhost`;
+      // Force a complete page reload to the tenant subdomain
+      // In development, redirect to subdomain.localhost/login
+      // In production, this would be subdomain.darmanager.com/login
+      const targetUrl = `http://${subdomain.toLowerCase()}.localhost/login`;
+      
+      // Try multiple methods to ensure the redirect works
+      try {
+        // Method 1: Direct assignment (should work)
+        window.location.assign(targetUrl);
+      } catch (error) {
+        // Method 2: If assign fails, try replace
+        window.location.replace(targetUrl);
+      }
     }
   };
 
@@ -49,7 +61,7 @@ export default function AccessPage() {
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white py-8 px-4 shadow-xl rounded-lg sm:px-10">
-            <div className="space-y-6">
+            <form onSubmit={handleSubdomainAccess} className="space-y-6">
               <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-md text-sm">
                 <div className="flex items-start">
                   <GlobeAltIcon className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
@@ -84,7 +96,7 @@ export default function AccessPage() {
 
               <div>
                 <button
-                  onClick={handleSubdomainAccess}
+                  type="submit"
                   disabled={!subdomain.trim()}
                   className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -92,26 +104,26 @@ export default function AccessPage() {
                   <ArrowRightIcon className="ml-2 h-4 w-4" />
                 </button>
               </div>
+            </form>
 
-              <div className="text-center">
-                <div className="text-sm text-gray-600">
-                  <p className="mb-2">Don't know your subdomain?</p>
-                  <a
-                    href="mailto:support@darmanager.com?subject=Subdomain Help"
-                    className="text-blue-600 hover:text-blue-500 font-medium"
-                  >
-                    Contact Support
-                  </a>
-                </div>
+            <div className="mt-6 text-center">
+              <div className="text-sm text-gray-600">
+                <p className="mb-2">Don't know your subdomain?</p>
+                <a
+                  href="mailto:support@darmanager.com?subject=Subdomain Help"
+                  className="text-blue-600 hover:text-blue-500 font-medium"
+                >
+                  Contact Support
+                </a>
               </div>
+            </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">Example URLs:</h3>
-                <div className="space-y-1 text-xs text-gray-600">
-                  <p>• Hotel Phoenicia: <code>phoenicia.darmanager.com</code></p>
-                  <p>• Byblos Guesthouse: <code>byblos.darmanager.com</code></p>
-                  <p>• Baalbek Inn: <code>baalbek.darmanager.com</code></p>
-                </div>
+            <div className="mt-6 bg-gray-50 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-gray-900 mb-2">Example URLs:</h3>
+              <div className="space-y-1 text-xs text-gray-600">
+                <p>• Hotel Phoenicia: <code>phoenicia.darmanager.com</code></p>
+                <p>• Byblos Guesthouse: <code>byblos.darmanager.com</code></p>
+                <p>• Baalbek Inn: <code>baalbek.darmanager.com</code></p>
               </div>
             </div>
           </div>
