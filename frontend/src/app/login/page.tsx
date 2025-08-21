@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { HomeIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, EyeIcon, EyeSlashIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import { useTenant } from '@/contexts/TenantContext';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { tenant, subdomain, isLoading: tenantLoading } = useTenant();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -114,6 +116,42 @@ export default function LoginPage() {
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
                 {error}
+              </div>
+            )}
+
+            {tenant && (
+              <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-md text-sm">
+                <div className="flex items-start">
+                  <InformationCircleIcon className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Tenant: {tenant.name}</p>
+                    <p className="text-blue-600">You are logging into {tenant.name}'s DarManager instance.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {subdomain && !tenant && (
+              <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-md text-sm">
+                <div className="flex items-start">
+                  <InformationCircleIcon className="h-5 w-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Subdomain: {subdomain}</p>
+                    <p className="text-yellow-600">This tenant subdomain was not found or is inactive.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!subdomain && (
+              <div className="bg-gray-50 border border-gray-200 text-gray-700 px-4 py-3 rounded-md text-sm">
+                <div className="flex items-start">
+                  <InformationCircleIcon className="h-5 w-5 text-gray-500 mt-0.5 mr-2 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Platform Access</p>
+                    <p className="text-gray-600">Logging in from main platform (super admin access).</p>
+                  </div>
+                </div>
               </div>
             )}
 

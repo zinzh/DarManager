@@ -116,14 +116,51 @@ async def root():
 
 # Authentication endpoints
 @app.post("/api/auth/login", response_model=Token)
-async def login(user_login: UserLogin, db: Session = Depends(get_db)):
-    """Authenticate user and return JWT tokens."""
+async def login(
+    user_login: UserLogin,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """Authenticate user and return JWT tokens with tenant validation."""
+    from tenant import get_tenant_from_subdomain
+    
+    # Get current tenant from subdomain (if any)
+    current_tenant = await get_tenant_from_subdomain(request, db)
+    
     user = AuthService.authenticate_user(db, user_login.email, user_login.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
         )
+    
+    # Tenant validation logic
+    if current_tenant:
+        # If accessing via a specific tenant subdomain
+        if user.role == UserRole.SUPER_ADMIN:
+            # Super admin can login from any tenant subdomain
+            pass
+        else:
+            # Regular users must login from their own tenant's subdomain
+            if not user.tenant_id or str(user.tenant_id) != str(current_tenant.id):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"You cannot access {current_tenant.name} from this account. Please use your organization's subdomain.",
+                )
+    else:
+        # If accessing via localhost (no tenant subdomain)
+        if user.role == UserRole.SUPER_ADMIN:
+            # Super admin can login from localhost
+            pass
+        else:
+            # Regular users should be redirected to their tenant subdomain
+            if user.tenant_id:
+                user_tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first()
+                if user_tenant:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Please access your account at: https://{user_tenant.subdomain}.darmanager.com",
+                    )
     
     # Create tokens
     access_token = AuthService.create_access_token(data={"sub": user.email})
