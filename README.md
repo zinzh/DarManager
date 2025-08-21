@@ -68,13 +68,22 @@ database (port 5432) <- api
 - [x] Property-level pricing (whole property rental)
 
 ### Phase 4: Guest Management ✅ COMPLETED
-- [x] Guest profiles and management
-- [x] Guest listing interface
-- [x] Add guest form with Lebanese context (WhatsApp, nationality)
-- [x] Guest communication details (phone, email, WhatsApp)
-- [x] Guest dashboard integration
+- [x] Complete Guest CRUD (Create, Read, Update, Delete)
+- [x] Guest listing interface with contact display
+- [x] Add/Edit guest forms with Lebanese context (WhatsApp, nationality)
+- [x] Guest details page with full profile view
+- [x] Guest communication tools (phone, email, WhatsApp links)
+- [x] Guest dashboard integration and statistics
 
-### Phase 5: Advanced Features (Future)
+### Phase 5: Room Management ✅ COMPLETED
+- [x] Complete Room CRUD operations
+- [x] Room edit form with status management
+- [x] Room-specific pricing and capacity controls
+- [x] Status tracking (available, occupied, cleaning, maintenance)
+- [x] Keybox code management per room
+- [x] Integration with property management system
+
+### Phase 6: Advanced Features (Future)
 - [ ] Manual booking entry system
 - [ ] Calendar view for bookings
 - [ ] Payment confirmation workflow

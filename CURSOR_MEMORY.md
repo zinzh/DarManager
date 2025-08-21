@@ -164,9 +164,11 @@ DarManager/
 ### **FIXED Issues**:
 - ✅ Room creation enum error (removed incorrect uppercase conversion)
 - ✅ Room details view enum error (changed Room.status from Enum to String)
+- ✅ Room edit 422 error (fixed schema validation - using RoomUpdate instead of RoomCreate)
 - ✅ Database column error: `properties.price_per_night does not exist`
 - ✅ Missing property-level pricing fields
 - ✅ SQLAlchemy enum mapping conflict (Room status now uses String field)
+- ✅ Schema consistency (all room schemas now use string for status)
 
 ### **IMPLEMENTED**: Lebanese Business Model Adaptation
 - ✅ Database migration: Added `price_per_night` and `max_guests` columns to properties
@@ -186,22 +188,38 @@ ADD COLUMN max_guests INTEGER DEFAULT 1;
 ## **CURRENT SESSION**: Guest Management System ✅
 
 ### **NEW FEATURES IMPLEMENTED**:
-- ✅ Guest CRUD API endpoints (create, read, update, delete)
-- ✅ Guest listing page with search and filters
-- ✅ Add guest form with validation
-- ✅ Guest details in dashboard stats
-- ✅ Mobile-responsive design
-- ✅ Lebanese market considerations (WhatsApp, nationality, etc.)
+- ✅ **Complete Guest Management System (CRUD)**
+  - Guest listing page with contact info display
+  - Add guest form with Lebanese context validation
+  - Edit guest form with data pre-population
+  - Guest details page with booking history placeholder
+  - Delete functionality with confirmation
+- ✅ **Complete Room Management System (CRUD)**
+  - Room edit form with status management
+  - Room-specific pricing and capacity
+  - Keybox code management
+  - Status tracking (available, occupied, cleaning, etc.)
+- ✅ **Enhanced Dashboard**
+  - Guest count in dashboard stats
+  - Quick action cards for navigation
+  - Mobile-responsive design improvements
 
 ### **Guest Management Features**:
-- **Guest Profiles**: First/last name, email, phone, WhatsApp
-- **Lebanese Context**: Nationality field, ID number storage
-- **Communication**: Multiple contact methods (phone, WhatsApp, email)
-- **Notes System**: Additional guest preferences and special requests
-- **Dashboard Integration**: Guest count in main dashboard
+- **Complete CRUD**: List, add, edit, view details, delete
+- **Lebanese Context**: WhatsApp integration, nationality, ID storage
+- **Communication Tools**: Direct links for phone, email, WhatsApp
+- **Guest Details**: Full profile view with timestamps
+- **Future Ready**: Booking history section prepared
+
+### **Room Management Features**:
+- **Complete CRUD**: List, add, edit, delete rooms per property
+- **Status Management**: Available, occupied, cleaning, maintenance, out of order
+- **Pricing Flexibility**: Room-level pricing or inherit from property
+- **Access Control**: Keybox code storage and display
+- **Capacity Tracking**: Guest limits per room
 
 **NEXT SESSION GOALS**:
-1. Guest edit functionality (complete the CRUD)
-2. Property-based booking workflow (whole property rental)
-3. Calendar integration
-4. Payment confirmation system
+1. Property-based booking workflow (whole property rental)
+2. Calendar integration for booking visualization
+3. Payment confirmation system
+4. Guest-booking relationship management

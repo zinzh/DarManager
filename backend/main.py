@@ -16,7 +16,7 @@ from models import User, Property, Room, Guest, UserRole
 from schemas import (
     UserCreate, UserLogin, Token, User as UserSchema,
     Property as PropertySchema, PropertyCreate,
-    Room as RoomSchema, RoomCreate,
+    Room as RoomSchema, RoomCreate, RoomUpdate,
     Guest as GuestSchema, GuestCreate, GuestUpdate,
     DashboardStats, MessageResponse
 )
@@ -275,7 +275,7 @@ async def create_room(
 @app.put("/api/rooms/{room_id}", response_model=RoomSchema)
 async def update_room(
     room_id: str,
-    room_update: RoomCreate,
+    room_update: RoomUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):

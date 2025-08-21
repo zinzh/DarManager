@@ -120,7 +120,7 @@ class RoomBase(BaseModel):
     description: Optional[str] = None
     capacity: int = 1
     price_per_night: Optional[Decimal] = None
-    status: RoomStatusSchema = RoomStatusSchema.AVAILABLE
+    status: str = "available"  # Use string instead of enum
     keybox_code: Optional[str] = None
 
 class RoomCreate(BaseModel):
@@ -137,7 +137,7 @@ class RoomUpdate(BaseModel):
     description: Optional[str] = None
     capacity: Optional[int] = None
     price_per_night: Optional[Decimal] = None
-    status: Optional[RoomStatusSchema] = None
+    status: Optional[str] = None
     keybox_code: Optional[str] = None
 
 class Room(RoomBase):
