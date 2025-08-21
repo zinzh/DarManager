@@ -1141,36 +1141,15 @@ async def get_dashboard(
             detail=f"Error retrieving dashboard data: {str(e)}"
         )
 
-# Public dashboard endpoint (no auth required)
-@app.get("/api/dashboard/public")
-async def get_public_dashboard(db: Session = Depends(get_db)):
-    """Get public dashboard data - basic stats only."""
-    try:
-        from models import Booking
-        
-        total_properties = db.query(Property).count()
-        active_bookings = db.query(Booking).filter(
-            Booking.status.in_(['confirmed', 'checked_in'])
-        ).count()
-        
-        return {
-            "message": "DarManager API is running",
-            "data": {
-                "total_properties": total_properties,
-                "active_bookings": active_bookings,
-                "monthly_revenue": 0  # Hidden in public view
-            }
-        }
-    except Exception as e:
-        return {
-            "message": "DarManager API is running",
-            "data": {
-                "total_properties": 0,
-                "active_bookings": 0,
-                "monthly_revenue": 0,
-                "error": str(e)
-            }
-        }
+# API Status endpoint (no auth required)
+@app.get("/api/status")
+async def get_api_status():
+    """Get API status for health checks."""
+    return {
+        "status": "healthy",
+        "message": "DarManager API is running",
+        "version": "1.0.0"
+    }
 
 if __name__ == "__main__":
     import uvicorn
