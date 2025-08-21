@@ -62,6 +62,8 @@ export default function NewBookingPage() {
   const preSelectedGuestId = searchParams.get('guest_id');
   const preSelectedPropertyId = searchParams.get('property_id');
   const preSelectedCheckInDate = searchParams.get('check_in_date');
+  const preSelectedCheckOutDate = searchParams.get('check_out_date');
+  const fromCalendar = searchParams.get('from_calendar') === 'true';
   
   const [properties, setProperties] = useState<Property[]>([]);
   const [guests, setGuests] = useState<Guest[]>([]);
@@ -69,7 +71,7 @@ export default function NewBookingPage() {
     property_id: preSelectedPropertyId || '',
     guest_id: preSelectedGuestId || '',
     check_in_date: preSelectedCheckInDate || '',
-    check_out_date: '',
+    check_out_date: preSelectedCheckOutDate || '',
     guests_count: 1,
     total_amount: '',
     status: 'pending',
@@ -227,7 +229,12 @@ export default function NewBookingPage() {
       }
 
       if (response.ok) {
-        router.push('/dashboard/bookings');
+        // Navigate back to where we came from
+        if (fromCalendar) {
+          router.push('/dashboard/calendar');
+        } else {
+          router.push('/dashboard/bookings');
+        }
       } else {
         const errorData = await response.json();
         alert(`Failed to create booking: ${errorData.detail || 'Unknown error'}`);
@@ -275,7 +282,7 @@ export default function NewBookingPage() {
           <div className="flex justify-between items-center py-4 sm:py-6">
             <div className="flex items-center min-w-0 flex-1">
               <button 
-                onClick={() => router.push('/dashboard/bookings')}
+                onClick={() => fromCalendar ? router.push('/dashboard/calendar') : router.push('/dashboard/bookings')}
                 className="mr-4 p-1 rounded-md hover:bg-gray-100 flex-shrink-0"
               >
                 <ArrowLeftIcon className="h-6 w-6 text-gray-600" />
@@ -513,7 +520,7 @@ export default function NewBookingPage() {
             <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200 mt-6">
               <button
                 type="button"
-                onClick={() => router.push('/dashboard/bookings')}
+                onClick={() => fromCalendar ? router.push('/dashboard/calendar') : router.push('/dashboard/bookings')}
                 className="btn-secondary"
                 disabled={isLoading}
               >

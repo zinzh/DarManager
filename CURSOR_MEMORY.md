@@ -272,6 +272,13 @@ ADD COLUMN max_guests INTEGER DEFAULT 1;
 - ✅ **Interactive Date Selection** - Click dates to view bookings or create new ones
 - ✅ **Direct Booking Creation** - Click empty dates to instantly start booking process
 - ✅ **Booking Details Modal** - Click dates with bookings to see details and manage
+- ✅ **Past Date Prevention** - Grey out past dates, prevent booking historical dates
+- ✅ **Date Range Selection** - Click start date, then end date to select booking range
+- ✅ **Visual Range Feedback** - Blue highlighting shows selected date range
+- ✅ **Smart Form Pre-fill** - Selected date range automatically fills booking form
+- ✅ **Fixed Date Timezone Issues** - Dates now display correctly without offset
+- ✅ **Smart Navigation** - Back button returns to calendar when booking started from calendar
+- ✅ **Fixed Booking Display** - Calendar now correctly shows booking dates without timezone shift
 
 ### **🔧 COMPLETE BOOKING MANAGEMENT**:
 - ✅ **Booking Edit Form** - Full form with validation and overlap prevention

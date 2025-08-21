@@ -41,6 +41,7 @@ interface CalendarDay {
   date: Date;
   isCurrentMonth: boolean;
   isToday: boolean;
+  isPast: boolean;
   bookings: Booking[];
 }
 
@@ -63,6 +64,8 @@ export default function BookingCalendarPage() {
   const [error, setError] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showDateBookings, setShowDateBookings] = useState(false);
+  const [selectedRange, setSelectedRange] = useState<{start: Date | null, end: Date | null}>({start: null, end: null});
+  const [isSelectingRange, setIsSelectingRange] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -121,9 +124,21 @@ export default function BookingCalendarPage() {
   };
 
   const isDateInBooking = (date: Date, booking: Booking): boolean => {
-    const checkIn = new Date(booking.check_in_date);
-    const checkOut = new Date(booking.check_out_date);
-    return date >= checkIn && date < checkOut;
+    // Parse dates in local timezone to avoid UTC conversion issues
+    const parseLocalDate = (dateStr: string) => {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day); // month is 0-indexed
+    };
+    
+    const checkIn = parseLocalDate(booking.check_in_date);
+    const checkOut = parseLocalDate(booking.check_out_date);
+    
+    // Normalize the comparison date too
+    const calendarDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    // For calendar display: show booking from check-in date through (check-out date - 1)
+    // Example: booking 26-27 shows on 26 only, booking 25-28 shows on 25,26,27
+    return calendarDate >= checkIn && calendarDate < checkOut;
   };
 
   const getBookingsForDate = (date: Date): Booking[] => {
@@ -144,6 +159,8 @@ export default function BookingCalendarPage() {
     const firstDayOfWeek = firstDayOfMonth.getDay();
     
     const days: CalendarDay[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
     
     // Add days from previous month
     const prevMonth = new Date(year, month - 1, 0);
@@ -153,18 +170,19 @@ export default function BookingCalendarPage() {
         date,
         isCurrentMonth: false,
         isToday: false,
+        isPast: date < today,
         bookings: getBookingsForDate(date)
       });
     }
     
     // Add days from current month
-    const today = new Date();
     for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
       const date = new Date(year, month, day);
       days.push({
         date,
         isCurrentMonth: true,
         isToday: date.toDateString() === today.toDateString(),
+        isPast: date < today,
         bookings: getBookingsForDate(date)
       });
     }
@@ -177,6 +195,7 @@ export default function BookingCalendarPage() {
         date,
         isCurrentMonth: false,
         isToday: false,
+        isPast: date < today,
         bookings: getBookingsForDate(date)
       });
     }
@@ -197,20 +216,94 @@ export default function BookingCalendarPage() {
   };
 
   const handleDateClick = (day: CalendarDay) => {
+    // Prevent selecting past dates
+    if (day.isPast) return;
+    
     if (day.bookings.length > 0) {
       setSelectedDate(day.date);
       setShowDateBookings(true);
-    } else {
-      // Navigate to create booking with pre-selected date
-      const dateStr = day.date.toISOString().split('T')[0];
-      router.push(`/dashboard/bookings/new?check_in_date=${dateStr}`);
+      return;
+    }
+
+    // Range selection logic
+    if (!selectedRange.start || (selectedRange.start && selectedRange.end)) {
+      // Start new range selection
+      setSelectedRange({ start: day.date, end: null });
+      setIsSelectingRange(true);
+    } else if (selectedRange.start && !selectedRange.end) {
+      // Complete range selection
+      const start = selectedRange.start;
+      const end = day.date;
+      
+      if (end >= start) {
+        setSelectedRange({ start, end });
+        setIsSelectingRange(false);
+        // Navigate to create booking with date range
+        handleCreateBookingWithRange(start, end);
+      } else {
+        // If user clicks earlier date, restart selection
+        setSelectedRange({ start: day.date, end: null });
+      }
     }
   };
 
-  const handleCreateBookingForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+  const handleCreateBookingWithRange = (startDate: Date, endDate: Date) => {
+    // Fix timezone issue by creating date in local timezone
+    const formatLocalDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
+    const checkInStr = formatLocalDate(startDate);
+    const checkOutStr = formatLocalDate(endDate);
+    
     const params = new URLSearchParams({
-      check_in_date: dateStr
+      check_in_date: checkInStr,
+      check_out_date: checkOutStr,
+      from_calendar: 'true' // Add flag to identify calendar origin
+    });
+    
+    if (selectedProperty) {
+      params.append('property_id', selectedProperty);
+    }
+    
+    router.push(`/dashboard/bookings/new?${params.toString()}`);
+  };
+
+  const isDateInRange = (date: Date): boolean => {
+    if (!selectedRange.start) return false;
+    if (!selectedRange.end) return date.getTime() === selectedRange.start.getTime();
+    return date >= selectedRange.start && date <= selectedRange.end;
+  };
+
+  const isDateRangeStart = (date: Date): boolean => {
+    return selectedRange.start?.getTime() === date.getTime();
+  };
+
+  const isDateRangeEnd = (date: Date): boolean => {
+    return selectedRange.end?.getTime() === date.getTime();
+  };
+
+  const clearSelection = () => {
+    setSelectedRange({ start: null, end: null });
+    setIsSelectingRange(false);
+  };
+
+  const handleCreateBookingForDate = (date: Date) => {
+    // Fix timezone issue by creating date in local timezone
+    const formatLocalDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
+    const dateStr = formatLocalDate(date);
+    const params = new URLSearchParams({
+      check_in_date: dateStr,
+      from_calendar: 'true' // Add flag to identify calendar origin
     });
     if (selectedProperty) {
       params.append('property_id', selectedProperty);
@@ -265,7 +358,7 @@ export default function BookingCalendarPage() {
         </div>
       </header>
 
-      {/* Calendar Controls */}
+                {/* Calendar Controls */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 mb-6">
           {/* Month Navigation */}
@@ -287,8 +380,21 @@ export default function BookingCalendarPage() {
             </button>
           </div>
 
-          {/* Property Filter */}
+          {/* Property Filter and Range Selection Info */}
           <div className="flex items-center space-x-4">
+            {isSelectingRange && (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-blue-600 font-medium">
+                  Selecting dates... {selectedRange.start && `From: ${selectedRange.start.toLocaleDateString()}`}
+                </span>
+                <button
+                  onClick={clearSelection}
+                  className="text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
             <select
               value={selectedProperty}
               onChange={(e) => setSelectedProperty(e.target.value)}
@@ -309,6 +415,14 @@ export default function BookingCalendarPage() {
             {error}
           </div>
         )}
+
+        {/* Instructions */}
+        <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-md mb-6">
+          <p className="text-sm">
+            📅 <strong>How to book:</strong> Click a start date, then click an end date to select a range. 
+            Click dates with bookings to view details. Past dates are disabled.
+          </p>
+        </div>
 
         {/* Calendar Legend */}
         <div className="flex flex-wrap items-center space-x-6 mb-6 text-sm">
@@ -347,42 +461,70 @@ export default function BookingCalendarPage() {
 
           {/* Calendar Days */}
           <div className="grid grid-cols-7">
-            {calendarDays.map((day, index) => (
-              <div
-                key={index}
-                className={`min-h-[120px] p-2 border-r border-b border-gray-200 cursor-pointer hover:bg-gray-50 ${
-                  !day.isCurrentMonth ? 'bg-gray-50' : ''
-                } ${day.isToday ? 'bg-blue-50' : ''}`}
-                onClick={() => handleDateClick(day)}
-              >
-                <div className={`text-sm font-medium mb-1 ${
-                  !day.isCurrentMonth ? 'text-gray-400' : 
-                  day.isToday ? 'text-blue-600' : 'text-gray-900'
-                }`}>
-                  {day.date.getDate()}
-                </div>
-                
-                <div className="space-y-1">
-                  {day.bookings.map((booking) => (
-                    <div
-                      key={booking.id}
-                      className={`text-xs p-1 rounded border truncate ${
-                        statusColors[booking.status as keyof typeof statusColors] || statusColors.pending
-                      }`}
-                      title={`${getGuestName(booking.guest_id)} - ${getPropertyName(booking.property_id)}`}
-                    >
-                      {getGuestName(booking.guest_id)}
-                    </div>
-                  ))}
+            {calendarDays.map((day, index) => {
+              const isInRange = isDateInRange(day.date);
+              const isRangeStart = isDateRangeStart(day.date);
+              const isRangeEnd = isDateRangeEnd(day.date);
+              
+              return (
+                <div
+                  key={index}
+                  className={`min-h-[120px] p-2 border-r border-b border-gray-200 relative ${
+                    day.isPast 
+                      ? 'bg-gray-100 cursor-not-allowed opacity-60' 
+                      : 'cursor-pointer hover:bg-gray-50'
+                  } ${
+                    !day.isCurrentMonth ? 'bg-gray-50' : ''
+                  } ${
+                    day.isToday ? 'bg-blue-50' : ''
+                  } ${
+                    isInRange && !day.isPast ? 'bg-blue-100' : ''
+                  } ${
+                    isRangeStart || isRangeEnd ? 'ring-2 ring-blue-500' : ''
+                  }`}
+                  onClick={() => handleDateClick(day)}
+                >
+                  <div className={`text-sm font-medium mb-1 ${
+                    day.isPast ? 'text-gray-400' :
+                    !day.isCurrentMonth ? 'text-gray-400' : 
+                    day.isToday ? 'text-blue-600' : 
+                    isInRange ? 'text-blue-800' : 'text-gray-900'
+                  }`}>
+                    {day.date.getDate()}
+                    {isRangeStart && <span className="ml-1 text-xs text-blue-600">Start</span>}
+                    {isRangeEnd && <span className="ml-1 text-xs text-blue-600">End</span>}
+                  </div>
                   
-                  {day.bookings.length === 0 && day.isCurrentMonth && (
-                    <div className="text-xs text-gray-400 italic">
-                      Click to book
-                    </div>
-                  )}
+                  <div className="space-y-1">
+                    {day.bookings.map((booking) => (
+                      <div
+                        key={booking.id}
+                        className={`text-xs p-1 rounded border truncate ${
+                          statusColors[booking.status as keyof typeof statusColors] || statusColors.pending
+                        }`}
+                        title={`${getGuestName(booking.guest_id)} - ${getPropertyName(booking.property_id)}`}
+                      >
+                        {getGuestName(booking.guest_id)}
+                      </div>
+                    ))}
+                    
+                    {day.bookings.length === 0 && day.isCurrentMonth && !day.isPast && (
+                      <div className="text-xs text-gray-400 italic">
+                        {isSelectingRange && !selectedRange.start ? 'Click to start' :
+                         isSelectingRange && selectedRange.start && !selectedRange.end ? 'Click to end' :
+                         'Available'}
+                      </div>
+                    )}
+                    
+                    {day.isPast && (
+                      <div className="text-xs text-gray-400 italic">
+                        Past date
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
