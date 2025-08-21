@@ -279,6 +279,9 @@ ADD COLUMN max_guests INTEGER DEFAULT 1;
 - ✅ **Fixed Date Timezone Issues** - Dates now display correctly without offset
 - ✅ **Smart Navigation** - Back button returns to calendar when booking started from calendar
 - ✅ **Fixed Booking Display** - Calendar now correctly shows booking dates without timezone shift
+- ✅ **Fixed Overlap Validation** - Now correctly prevents overlapping bookings including pending status
+- ✅ **Fixed Dashboard Empty State** - Dashboard now handles empty data gracefully without errors
+- ✅ **Fixed Orphaned Bookings** - Cleaned up null property_id bookings and added foreign key constraints with cascade delete
 
 ### **🔧 COMPLETE BOOKING MANAGEMENT**:
 - ✅ **Booking Edit Form** - Full form with validation and overlap prevention

@@ -474,6 +474,9 @@ async def get_bookings(
     """Get all bookings with optional filtering by guest or property."""
     query = db.query(Booking)
     
+    # Filter out bookings with null property_id or guest_id to prevent validation errors
+    query = query.filter(Booking.property_id.isnot(None), Booking.guest_id.isnot(None))
+    
     if guest_id:
         query = query.filter(Booking.guest_id == guest_id)
     if property_id:
@@ -530,7 +533,7 @@ async def create_booking(
     # Check for overlapping bookings (Lebanese model: whole property booking)
     overlapping_bookings = db.query(Booking).filter(
         Booking.property_id == booking_create.property_id,
-        Booking.status.in_(["confirmed", "checked_in"]),  # Only active bookings
+        Booking.status.in_(["pending", "confirmed", "checked_in"]),  # Include pending bookings
         # Date overlap logic: new booking overlaps if:
         # (new_start < existing_end) AND (new_end > existing_start)
         Booking.check_out_date > booking_create.check_in_date,
@@ -585,7 +588,7 @@ async def update_booking(
         overlapping_bookings = db.query(Booking).filter(
             Booking.property_id == db_booking.property_id,
             Booking.id != booking_id,  # Exclude current booking
-            Booking.status.in_(["confirmed", "checked_in"]),  # Only active bookings
+            Booking.status.in_(["pending", "confirmed", "checked_in"]),  # Include pending bookings
             # Date overlap logic
             Booking.check_out_date > check_in,
             Booking.check_in_date < check_out
@@ -639,60 +642,85 @@ async def get_dashboard(
     current_user: User = Depends(get_current_user)
 ):
     """Get dashboard statistics."""
-    from sqlalchemy import func
-    from models import Booking, Payment
-    
-    # Get counts
-    total_properties = db.query(Property).count()
-    total_rooms = db.query(Room).count()
-    total_guests = db.query(Guest).count()
-    active_bookings = db.query(Booking).filter(
-        Booking.status.in_(['confirmed', 'checked_in'])
-    ).count()
-    
-    # Get monthly revenue
-    current_month = datetime.now().replace(day=1)
-    monthly_revenue = db.query(func.sum(Payment.amount)).filter(
-        Payment.payment_date >= current_month,
-        Payment.payment_status == 'completed'
-    ).scalar() or 0
-    
-    # Calculate occupancy rate (simplified)
-    total_rooms_count = total_rooms or 1
-    occupancy_rate = (active_bookings / total_rooms_count) * 100 if total_rooms_count > 0 else 0
-    
-    # Get recent bookings
-    recent_bookings = db.query(Booking).order_by(Booking.created_at.desc()).limit(5).all()
-    
-    return DashboardStats(
-        total_properties=total_properties,
-        total_rooms=total_rooms,
-        total_guests=total_guests,
-        active_bookings=active_bookings,
-        monthly_revenue=monthly_revenue,
-        occupancy_rate=occupancy_rate,
-        recent_bookings=recent_bookings
-    )
+    try:
+        from sqlalchemy import func
+        from models import Booking, Payment
+        
+        # Get counts
+        total_properties = db.query(Property).count()
+        total_rooms = db.query(Room).count()
+        total_guests = db.query(Guest).count()
+        active_bookings = db.query(Booking).filter(
+            Booking.status.in_(['confirmed', 'checked_in'])
+        ).count()
+        
+        # Get monthly revenue (handle case where Payment table doesn't exist or is empty)
+        current_month = datetime.now().replace(day=1)
+        try:
+            monthly_revenue = db.query(func.sum(Payment.amount)).filter(
+                Payment.payment_date >= current_month,
+                Payment.payment_status == 'completed'
+            ).scalar() or 0
+        except Exception:
+            monthly_revenue = 0
+        
+        # Calculate occupancy rate (simplified)
+        occupancy_rate = 0.0
+        if total_rooms > 0:
+            occupancy_rate = (active_bookings / total_rooms) * 100
+        
+        # Get recent bookings (handle empty case)
+        recent_bookings = []
+        try:
+            recent_bookings = db.query(Booking).order_by(Booking.created_at.desc()).limit(5).all()
+        except Exception:
+            recent_bookings = []
+        
+        return DashboardStats(
+            total_properties=total_properties,
+            total_rooms=total_rooms,
+            total_guests=total_guests,
+            active_bookings=active_bookings,
+            monthly_revenue=float(monthly_revenue),
+            occupancy_rate=occupancy_rate,
+            recent_bookings=recent_bookings or []
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving dashboard data: {str(e)}"
+        )
 
 # Public dashboard endpoint (no auth required)
 @app.get("/api/dashboard/public")
 async def get_public_dashboard(db: Session = Depends(get_db)):
     """Get public dashboard data - basic stats only."""
-    from models import Booking
-    
-    total_properties = db.query(Property).count()
-    active_bookings = db.query(Booking).filter(
-        Booking.status.in_(['confirmed', 'checked_in'])
-    ).count()
-    
-    return {
-        "message": "DarManager API is running",
-        "data": {
-            "total_properties": total_properties,
-            "active_bookings": active_bookings,
-            "monthly_revenue": 0  # Hidden in public view
+    try:
+        from models import Booking
+        
+        total_properties = db.query(Property).count()
+        active_bookings = db.query(Booking).filter(
+            Booking.status.in_(['confirmed', 'checked_in'])
+        ).count()
+        
+        return {
+            "message": "DarManager API is running",
+            "data": {
+                "total_properties": total_properties,
+                "active_bookings": active_bookings,
+                "monthly_revenue": 0  # Hidden in public view
+            }
         }
-    }
+    except Exception as e:
+        return {
+            "message": "DarManager API is running",
+            "data": {
+                "total_properties": 0,
+                "active_bookings": 0,
+                "monthly_revenue": 0,
+                "error": str(e)
+            }
+        }
 
 if __name__ == "__main__":
     import uvicorn

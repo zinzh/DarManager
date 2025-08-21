@@ -119,6 +119,12 @@ CREATE TRIGGER update_guests_updated_at BEFORE UPDATE ON guests FOR EACH ROW EXE
 CREATE TRIGGER update_bookings_updated_at BEFORE UPDATE ON bookings FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_payments_updated_at BEFORE UPDATE ON payments FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
+-- Add foreign key constraints with cascade delete to prevent orphaned records
+ALTER TABLE rooms ADD CONSTRAINT fk_rooms_property_id FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE;
+ALTER TABLE bookings ADD CONSTRAINT fk_bookings_property_id FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE;
+ALTER TABLE bookings ADD CONSTRAINT fk_bookings_guest_id FOREIGN KEY (guest_id) REFERENCES guests(id) ON DELETE CASCADE;
+ALTER TABLE payments ADD CONSTRAINT fk_payments_booking_id FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE;
+
 -- Insert sample data for testing (optional)
 INSERT INTO properties (name, description, address, phone, wifi_password) VALUES 
 ('Beirut Guesthouse', 'Cozy guesthouse in the heart of Beirut', 'Hamra Street, Beirut, Lebanon', '+961-1-123456', 'BeirutGuest2024')
