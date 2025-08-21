@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: darmanager_password_2024
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/init_multitenant.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     networks:

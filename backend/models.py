@@ -41,11 +41,29 @@ class RoomStatus(enum.Enum):
     OUT_OF_ORDER = "out_of_order"
 
 class UserRole(enum.Enum):
-    ADMIN = "admin"
-    MANAGER = "manager"
-    STAFF = "staff"
+    SUPER_ADMIN = "super_admin"  # Platform super admin (you)
+    ADMIN = "admin"              # Tenant admin (client)
+    MANAGER = "manager"          # Tenant manager
+    STAFF = "staff"              # Tenant staff
 
 # Models
+class Tenant(Base):
+    __tablename__ = "tenants"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(255), nullable=False)  # "Ahmad's Guesthouse"
+    subdomain = Column(String(50), unique=True, nullable=False)  # "ahmad"
+    domain = Column(String(255), unique=True, nullable=True)  # "ahmad.darmanager.com"
+    contact_email = Column(String(255), nullable=False)
+    contact_phone = Column(String(50))
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    users = relationship("User", back_populates="tenant")
+    properties = relationship("Property", back_populates="tenant", cascade="all, delete-orphan")
+    guests = relationship("Guest", back_populates="tenant", cascade="all, delete-orphan")
 class User(Base):
     __tablename__ = "users"
     
@@ -56,14 +74,19 @@ class User(Base):
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     role = Column(Enum(UserRole), default=UserRole.STAFF)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=True)  # nullable for super admin
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    tenant = relationship("Tenant", back_populates="users")
 
 class Property(Base):
     __tablename__ = "properties"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
     name = Column(String(255), nullable=False)
     description = Column(Text)
     address = Column(Text)
@@ -76,6 +99,7 @@ class Property(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
+    tenant = relationship("Tenant", back_populates="properties")
     rooms = relationship("Room", back_populates="property", cascade="all, delete-orphan")
     bookings = relationship("Booking", back_populates="property")
 
@@ -101,6 +125,7 @@ class Guest(Base):
     __tablename__ = "guests"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
     first_name = Column(String(255), nullable=False)
     last_name = Column(String(255), nullable=False)
     email = Column(String(255), index=True)
@@ -113,6 +138,7 @@ class Guest(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     
     # Relationships
+    tenant = relationship("Tenant", back_populates="guests")
     bookings = relationship("Booking", back_populates="guest")
 
 class Booking(Base):

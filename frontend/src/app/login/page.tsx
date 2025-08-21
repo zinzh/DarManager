@@ -31,10 +31,49 @@ export default function LoginPage() {
       if (response.ok) {
         const data = await response.json();
         // Store the token in localStorage (in production, consider more secure storage)
+        localStorage.setItem('token', data.access_token);
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('refresh_token', data.refresh_token);
         
-        // Redirect to dashboard
+        // Check user info for role-based redirects
+        try {
+          const userResponse = await fetch('/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${data.access_token}`,
+            },
+          });
+          
+          if (userResponse.ok) {
+            const user = await userResponse.json();
+            
+            // Super admin goes to admin dashboard
+            if (user.role === 'super_admin') {
+              router.push('/admin');
+              return;
+            }
+            
+            // Check if this is a new tenant (no properties yet)
+            const propertiesResponse = await fetch('/api/properties', {
+              headers: {
+                'Authorization': `Bearer ${data.access_token}`,
+              },
+            });
+            
+            if (propertiesResponse.ok) {
+              const properties = await propertiesResponse.json();
+              
+              // If no properties, redirect to onboarding
+              if (properties.length === 0) {
+                router.push('/onboarding');
+                return;
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Error checking user info:', err);
+        }
+        
+        // Default redirect to dashboard
         router.push('/dashboard');
       } else {
         const errorData = await response.json();

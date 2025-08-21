@@ -37,17 +37,45 @@ class RoomStatusSchema(str, Enum):
     OUT_OF_ORDER = "out_of_order"
 
 class UserRoleSchema(str, Enum):
+    SUPER_ADMIN = "super_admin"
     ADMIN = "admin"
     MANAGER = "manager"
     STAFF = "staff"
 
 # Base schemas
+class TenantBase(BaseModel):
+    name: str
+    subdomain: str
+    domain: Optional[str] = None
+    contact_email: EmailStr
+    contact_phone: Optional[str] = None
+    is_active: bool = True
+
+class TenantCreate(TenantBase):
+    pass
+
+class TenantUpdate(BaseModel):
+    name: Optional[str] = None
+    domain: Optional[str] = None
+    contact_email: Optional[EmailStr] = None
+    contact_phone: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class Tenant(TenantBase):
+    id: UUID4
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
 class UserBase(BaseModel):
     email: EmailStr
     username: str
     first_name: str
     last_name: str
     role: UserRoleSchema = UserRoleSchema.STAFF
+    tenant_id: Optional[UUID4] = None  # None for super admin
     is_active: bool = True
 
 class UserCreate(UserBase):
@@ -93,7 +121,18 @@ class PropertyBase(BaseModel):
     price_per_night: Optional[Decimal] = None
     max_guests: int = 1
 
-class PropertyCreate(PropertyBase):
+class PropertyCreateBase(BaseModel):
+    """Property creation without tenant_id (will be set by backend)"""
+    name: str
+    description: Optional[str] = None
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[EmailStr] = None
+    wifi_password: Optional[str] = None
+    price_per_night: Optional[Decimal] = None
+    max_guests: int = 1
+
+class PropertyCreate(PropertyCreateBase):
     pass
 
 class PropertyUpdate(BaseModel):
@@ -108,6 +147,7 @@ class PropertyUpdate(BaseModel):
 
 class Property(PropertyBase):
     id: UUID4
+    tenant_id: UUID4
     created_at: datetime
     updated_at: datetime
     
@@ -176,7 +216,18 @@ class GuestBase(BaseModel):
     id_number: Optional[str] = None
     notes: Optional[str] = None
 
-class GuestCreate(GuestBase):
+class GuestCreateBase(BaseModel):
+    """Guest creation without tenant_id (will be set by backend)"""
+    first_name: str
+    last_name: str
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    whatsapp: Optional[str] = None
+    nationality: Optional[str] = None
+    id_number: Optional[str] = None
+    notes: Optional[str] = None
+
+class GuestCreate(GuestCreateBase):
     pass
 
 class GuestUpdate(BaseModel):
@@ -191,6 +242,7 @@ class GuestUpdate(BaseModel):
 
 class Guest(GuestBase):
     id: UUID4
+    tenant_id: UUID4
     created_at: datetime
     updated_at: datetime
     

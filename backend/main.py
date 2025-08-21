@@ -3,7 +3,7 @@ DarManager Backend API
 A FastAPI application for Lebanese guesthouse management.
 """
 
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -12,9 +12,10 @@ from datetime import datetime, timedelta, date
 from typing import List
 
 from database import get_db, init_database
-from models import User, Property, Room, Guest, Booking, UserRole
+from models import User, Property, Room, Guest, Booking, Tenant, UserRole
 from schemas import (
     UserCreate, UserLogin, Token, User as UserSchema,
+    Tenant as TenantSchema, TenantCreate, TenantUpdate,
     Property as PropertySchema, PropertyCreate,
     Room as RoomSchema, RoomCreate, RoomUpdate, RoomWithStatus,
     Guest as GuestSchema, GuestCreate, GuestUpdate,
@@ -75,27 +76,18 @@ def calculate_room_status(room: Room, db: Session) -> str:
 # Initialize database on startup
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database and create default admin user."""
+    """Initialize database and check for super admin user."""
     try:
         init_database()
         
-        # Create default admin user if none exists
+        # Check if super admin exists (created by database init script)
         db = next(get_db())
-        admin_exists = db.query(User).filter(User.role == UserRole.ADMIN).first()
+        super_admin_exists = db.query(User).filter(User.role == UserRole.SUPER_ADMIN).first()
         
-        if not admin_exists:
-            admin_user = User(
-                email="admin@darmanager.com",
-                username="admin",
-                first_name="Admin",
-                last_name="User",
-                hashed_password=AuthService.get_password_hash("admin123"),
-                role=UserRole.ADMIN,
-                is_active=True
-            )
-            db.add(admin_user)
-            db.commit()
-            print("Default admin user created: admin@darmanager.com / admin123")
+        if super_admin_exists:
+            print(f"✅ Super admin found: {super_admin_exists.email}")
+        else:
+            print("⚠️  No super admin user found - should be created by database init script")
         
         db.close()
     except Exception as e:
@@ -187,8 +179,19 @@ async def get_properties(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all properties."""
-    properties = db.query(Property).all()
+    """Get all properties for the current user's tenant."""
+    from tenant import get_user_tenant_id
+    
+    tenant_id = get_user_tenant_id(current_user)
+    
+    # Super admin can see all properties (for now)
+    if current_user.role == UserRole.SUPER_ADMIN:
+        properties = db.query(Property).all()
+    else:
+        if not tenant_id:
+            return []  # User has no tenant, return empty list
+        properties = db.query(Property).filter(Property.tenant_id == tenant_id).all()
+    
     return properties
 
 @app.get("/api/properties/{property_id}", response_model=PropertySchema)
@@ -197,13 +200,23 @@ async def get_property(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get a single property by ID."""
+    """Get a single property by ID with tenant validation."""
+    from tenant import get_user_tenant_id, validate_tenant_access
+    
     db_property = db.query(Property).filter(Property.id == property_id).first()
     if not db_property:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Property not found"
         )
+    
+    # Validate tenant access
+    if not validate_tenant_access(current_user, str(db_property.tenant_id)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Property not found"  # Don't reveal that it exists but is forbidden
+        )
+    
     return db_property
 
 @app.post("/api/properties", response_model=PropertySchema)
@@ -213,7 +226,31 @@ async def create_property(
     current_user: User = Depends(get_current_user)
 ):
     """Create a new property."""
-    db_property = Property(**property_create.dict())
+    from tenant import get_user_tenant_id
+    
+    # Get tenant_id for the current user
+    tenant_id = get_user_tenant_id(current_user)
+    
+    # Super admin must specify which tenant (for now, we'll handle this later)
+    if current_user.role == UserRole.SUPER_ADMIN and not tenant_id:
+        # For now, super admin can't create properties without specifying tenant
+        # This will be handled by super admin endpoints later
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Super admin must use tenant-specific endpoints to create properties"
+        )
+    
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User must be associated with a tenant to create properties"
+        )
+    
+    # Create property with tenant_id
+    property_data = property_create.dict()
+    property_data['tenant_id'] = tenant_id
+    
+    db_property = Property(**property_data)
     db.add(db_property)
     db.commit()
     db.refresh(db_property)
@@ -226,9 +263,18 @@ async def update_property(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Update a property."""
+    """Update a property with tenant validation."""
+    from tenant import validate_tenant_access
+    
     db_property = db.query(Property).filter(Property.id == property_id).first()
     if not db_property:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Property not found"
+        )
+    
+    # Validate tenant access
+    if not validate_tenant_access(current_user, str(db_property.tenant_id)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Property not found"
@@ -249,9 +295,18 @@ async def delete_property(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Delete a property."""
+    """Delete a property with tenant validation."""
+    from tenant import validate_tenant_access
+    
     db_property = db.query(Property).filter(Property.id == property_id).first()
     if not db_property:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Property not found"
+        )
+    
+    # Validate tenant access
+    if not validate_tenant_access(current_user, str(db_property.tenant_id)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Property not found"
@@ -388,8 +443,19 @@ async def get_guests(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all guests."""
-    guests = db.query(Guest).order_by(Guest.created_at.desc()).all()
+    """Get all guests for the current user's tenant."""
+    from tenant import get_user_tenant_id
+    
+    tenant_id = get_user_tenant_id(current_user)
+    
+    # Super admin can see all guests (for now)
+    if current_user.role == UserRole.SUPER_ADMIN:
+        guests = db.query(Guest).order_by(Guest.created_at.desc()).all()
+    else:
+        if not tenant_id:
+            return []  # User has no tenant, return empty list
+        guests = db.query(Guest).filter(Guest.tenant_id == tenant_id).order_by(Guest.created_at.desc()).all()
+    
     return guests
 
 @app.get("/api/guests/{guest_id}", response_model=GuestSchema)
@@ -398,13 +464,23 @@ async def get_guest(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get a specific guest."""
+    """Get a specific guest with tenant validation."""
+    from tenant import validate_tenant_access
+    
     guest = db.query(Guest).filter(Guest.id == guest_id).first()
     if not guest:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Guest not found"
         )
+    
+    # Validate tenant access
+    if not validate_tenant_access(current_user, str(guest.tenant_id)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Guest not found"
+        )
+    
     return guest
 
 @app.post("/api/guests", response_model=GuestSchema)
@@ -413,8 +489,30 @@ async def create_guest(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new guest."""
-    db_guest = Guest(**guest_create.dict())
+    """Create a new guest with tenant isolation."""
+    from tenant import get_user_tenant_id
+    
+    # Get tenant_id for the current user
+    tenant_id = get_user_tenant_id(current_user)
+    
+    # Super admin must specify which tenant (for now, we'll handle this later)
+    if current_user.role == UserRole.SUPER_ADMIN and not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Super admin must use tenant-specific endpoints to create guests"
+        )
+    
+    if not tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User must be associated with a tenant to create guests"
+        )
+    
+    # Create guest with tenant_id
+    guest_data = guest_create.dict()
+    guest_data['tenant_id'] = tenant_id
+    
+    db_guest = Guest(**guest_data)
     db.add(db_guest)
     db.commit()
     db.refresh(db_guest)
@@ -427,9 +525,18 @@ async def update_guest(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Update a guest."""
+    """Update a guest with tenant validation."""
+    from tenant import validate_tenant_access
+    
     db_guest = db.query(Guest).filter(Guest.id == guest_id).first()
     if not db_guest:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Guest not found"
+        )
+    
+    # Validate tenant access
+    if not validate_tenant_access(current_user, str(db_guest.tenant_id)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Guest not found"
@@ -450,9 +557,18 @@ async def delete_guest(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Delete a guest."""
+    """Delete a guest with tenant validation."""
+    from tenant import validate_tenant_access
+    
     db_guest = db.query(Guest).filter(Guest.id == guest_id).first()
     if not db_guest:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Guest not found"
+        )
+    
+    # Validate tenant access
+    if not validate_tenant_access(current_user, str(db_guest.tenant_id)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Guest not found"
@@ -471,12 +587,28 @@ async def get_bookings(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all bookings with optional filtering by guest or property."""
+    """Get all bookings for the current user's tenant."""
+    from tenant import get_user_tenant_id
+    
+    tenant_id = get_user_tenant_id(current_user)
+    
+    # Start with base query
     query = db.query(Booking)
     
     # Filter out bookings with null property_id or guest_id to prevent validation errors
     query = query.filter(Booking.property_id.isnot(None), Booking.guest_id.isnot(None))
     
+    # Add tenant filtering (bookings inherit tenant from property)
+    if current_user.role == UserRole.SUPER_ADMIN:
+        # Super admin can see all bookings (for now)
+        pass
+    else:
+        if not tenant_id:
+            return []  # User has no tenant, return empty list
+        # Join with properties to filter by tenant
+        query = query.join(Property).filter(Property.tenant_id == tenant_id)
+    
+    # Apply additional filters
     if guest_id:
         query = query.filter(Booking.guest_id == guest_id)
     if property_id:
@@ -491,13 +623,33 @@ async def get_booking(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get a specific booking."""
+    """Get a specific booking with tenant validation."""
+    from tenant import get_user_tenant_id
+    
     booking = db.query(Booking).filter(Booking.id == booking_id).first()
     if not booking:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Booking not found"
         )
+    
+    # Validate tenant access (booking inherits tenant from property)
+    if current_user.role != UserRole.SUPER_ADMIN:
+        tenant_id = get_user_tenant_id(current_user)
+        if not tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Booking not found"
+            )
+        
+        # Check if booking's property belongs to user's tenant
+        property_obj = db.query(Property).filter(Property.id == booking.property_id).first()
+        if not property_obj or str(property_obj.tenant_id) != tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Booking not found"
+            )
+    
     return booking
 
 @app.post("/api/bookings", response_model=BookingSchema)
@@ -506,8 +658,10 @@ async def create_booking(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new booking."""
-    # Validate that property exists
+    """Create a new booking with tenant validation."""
+    from tenant import get_user_tenant_id, validate_tenant_access
+    
+    # Validate that property exists and user has access
     property_exists = db.query(Property).filter(Property.id == booking_create.property_id).first()
     if not property_exists:
         raise HTTPException(
@@ -515,9 +669,23 @@ async def create_booking(
             detail="Property not found"
         )
     
-    # Validate that guest exists
+    # Validate tenant access to property
+    if not validate_tenant_access(current_user, str(property_exists.tenant_id)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Property not found"
+        )
+    
+    # Validate that guest exists and belongs to same tenant
     guest_exists = db.query(Guest).filter(Guest.id == booking_create.guest_id).first()
     if not guest_exists:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Guest not found"
+        )
+    
+    # Validate tenant access to guest
+    if not validate_tenant_access(current_user, str(guest_exists.tenant_id)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Guest not found"
@@ -635,32 +803,284 @@ async def delete_booking(
     
     return {"message": "Booking deleted successfully"}
 
+# Super Admin Endpoints (Tenant Management)
+def require_super_admin(current_user: User = Depends(get_current_user)):
+    """Dependency to ensure only super admins can access these endpoints."""
+    if current_user.role != UserRole.SUPER_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Super admin access required"
+        )
+    return current_user
+
+@app.get("/api/admin/tenants", response_model=List[TenantSchema])
+async def get_all_tenants(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin)
+):
+    """Get all tenants (Super admin only)."""
+    tenants = db.query(Tenant).order_by(Tenant.created_at.desc()).all()
+    return tenants
+
+@app.get("/api/admin/tenants/{tenant_id}", response_model=TenantSchema)
+async def get_tenant(
+    tenant_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin)
+):
+    """Get a specific tenant (Super admin only)."""
+    tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
+    if not tenant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tenant not found"
+        )
+    return tenant
+
+@app.post("/api/admin/tenants", response_model=TenantSchema)
+async def create_tenant(
+    tenant_create: TenantCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin)
+):
+    """Create a new tenant (Super admin only)."""
+    # Check if subdomain already exists
+    existing_tenant = db.query(Tenant).filter(Tenant.subdomain == tenant_create.subdomain).first()
+    if existing_tenant:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Subdomain already exists"
+        )
+    
+    # Check if domain already exists (if provided)
+    if tenant_create.domain:
+        existing_domain = db.query(Tenant).filter(Tenant.domain == tenant_create.domain).first()
+        if existing_domain:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Domain already exists"
+            )
+    
+    # Create tenant
+    db_tenant = Tenant(**tenant_create.dict())
+    db.add(db_tenant)
+    db.commit()
+    db.refresh(db_tenant)
+    return db_tenant
+
+@app.put("/api/admin/tenants/{tenant_id}", response_model=TenantSchema)
+async def update_tenant(
+    tenant_id: str,
+    tenant_update: TenantUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin)
+):
+    """Update a tenant (Super admin only)."""
+    db_tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
+    if not db_tenant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tenant not found"
+        )
+    
+    # Update fields
+    update_data = tenant_update.dict(exclude_unset=True)
+    
+    # Check subdomain uniqueness if being updated
+    if "subdomain" in update_data:
+        existing_tenant = db.query(Tenant).filter(
+            Tenant.subdomain == update_data["subdomain"],
+            Tenant.id != tenant_id
+        ).first()
+        if existing_tenant:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Subdomain already exists"
+            )
+    
+    # Check domain uniqueness if being updated
+    if "domain" in update_data and update_data["domain"]:
+        existing_domain = db.query(Tenant).filter(
+            Tenant.domain == update_data["domain"],
+            Tenant.id != tenant_id
+        ).first()
+        if existing_domain:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Domain already exists"
+            )
+    
+    for field, value in update_data.items():
+        setattr(db_tenant, field, value)
+    
+    db.commit()
+    db.refresh(db_tenant)
+    return db_tenant
+
+@app.delete("/api/admin/tenants/{tenant_id}")
+async def delete_tenant(
+    tenant_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin)
+):
+    """Delete a tenant (Super admin only). WARNING: This will delete all tenant data!"""
+    db_tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
+    if not db_tenant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tenant not found"
+        )
+    
+    # Get count of related data that will be deleted
+    user_count = db.query(User).filter(User.tenant_id == tenant_id).count()
+    property_count = db.query(Property).filter(Property.tenant_id == tenant_id).count()
+    guest_count = db.query(Guest).filter(Guest.tenant_id == tenant_id).count()
+    
+    db.delete(db_tenant)
+    db.commit()
+    
+    return {
+        "message": "Tenant deleted successfully",
+        "deleted_data": {
+            "users": user_count,
+            "properties": property_count,
+            "guests": guest_count
+        }
+    }
+
+@app.post("/api/admin/tenants/{tenant_id}/admin-user", response_model=UserSchema)
+async def create_tenant_admin(
+    tenant_id: str,
+    user_create: UserCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_super_admin)
+):
+    """Create an admin user for a specific tenant (Super admin only)."""
+    # Verify tenant exists
+    tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
+    if not tenant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tenant not found"
+        )
+    
+    # Check if email already exists
+    existing_user = db.query(User).filter(User.email == user_create.email).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+    
+    # Create user with tenant_id and ADMIN role
+    hashed_password = AuthService.get_password_hash(user_create.password)
+    db_user = User(
+        email=user_create.email,
+        username=user_create.username,
+        hashed_password=hashed_password,
+        first_name=user_create.first_name,
+        last_name=user_create.last_name,
+        role=UserRole.ADMIN,  # Force admin role for tenant admin users
+        tenant_id=tenant_id
+    )
+    
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+# Tenant endpoint for frontend detection
+@app.get("/api/tenant/current", response_model=TenantSchema)
+async def get_current_tenant_info(
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """Get current tenant information (no auth required for tenant detection)."""
+    from tenant import get_tenant_from_subdomain
+    
+    tenant = await get_tenant_from_subdomain(request, db)
+    if not tenant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tenant not found"
+        )
+    
+    return tenant
+
 # Dashboard endpoint
 @app.get("/api/dashboard", response_model=DashboardStats)
 async def get_dashboard(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get dashboard statistics."""
+    """Get dashboard statistics for current user's tenant."""
     try:
         from sqlalchemy import func
         from models import Booking, Payment
+        from tenant import get_user_tenant_id
         
-        # Get counts
-        total_properties = db.query(Property).count()
-        total_rooms = db.query(Room).count()
-        total_guests = db.query(Guest).count()
-        active_bookings = db.query(Booking).filter(
-            Booking.status.in_(['confirmed', 'checked_in'])
-        ).count()
+        tenant_id = get_user_tenant_id(current_user)
+        
+        # For super admin, show aggregated stats across all tenants
+        if current_user.role == UserRole.SUPER_ADMIN:
+            # Get counts across all tenants
+            total_properties = db.query(Property).count()
+            total_rooms = db.query(Room).count()
+            total_guests = db.query(Guest).count()
+            active_bookings = db.query(Booking).filter(
+                Booking.status.in_(['confirmed', 'checked_in'])
+            ).count()
+            
+            # Get recent bookings across all tenants
+            recent_bookings = db.query(Booking).order_by(Booking.created_at.desc()).limit(5).all()
+        else:
+            # For regular users, filter by tenant
+            if not tenant_id:
+                # User has no tenant, return zeros
+                return DashboardStats(
+                    total_properties=0,
+                    total_rooms=0,
+                    total_guests=0,
+                    active_bookings=0,
+                    monthly_revenue=0.0,
+                    occupancy_rate=0.0,
+                    recent_bookings=[]
+                )
+            
+            # Get counts for current tenant only
+            total_properties = db.query(Property).filter(Property.tenant_id == tenant_id).count()
+            total_guests = db.query(Guest).filter(Guest.tenant_id == tenant_id).count()
+            
+            # Count rooms for properties belonging to this tenant
+            total_rooms = db.query(Room).join(Property).filter(Property.tenant_id == tenant_id).count()
+            
+            # Count active bookings for properties belonging to this tenant
+            active_bookings = db.query(Booking).join(Property).filter(
+                Property.tenant_id == tenant_id,
+                Booking.status.in_(['confirmed', 'checked_in'])
+            ).count()
+            
+            # Get recent bookings for this tenant's properties
+            recent_bookings = db.query(Booking).join(Property).filter(
+                Property.tenant_id == tenant_id
+            ).order_by(Booking.created_at.desc()).limit(5).all()
         
         # Get monthly revenue (handle case where Payment table doesn't exist or is empty)
         current_month = datetime.now().replace(day=1)
         try:
-            monthly_revenue = db.query(func.sum(Payment.amount)).filter(
-                Payment.payment_date >= current_month,
-                Payment.payment_status == 'completed'
-            ).scalar() or 0
+            if current_user.role == UserRole.SUPER_ADMIN:
+                # Super admin sees all revenue
+                monthly_revenue = db.query(func.sum(Payment.amount)).filter(
+                    Payment.payment_date >= current_month,
+                    Payment.payment_status == 'completed'
+                ).scalar() or 0
+            else:
+                # Regular users see only their tenant's revenue (via bookings)
+                monthly_revenue = db.query(func.sum(Payment.amount)).join(Booking).join(Property).filter(
+                    Property.tenant_id == tenant_id,
+                    Payment.payment_date >= current_month,
+                    Payment.payment_status == 'completed'
+                ).scalar() or 0
         except Exception:
             monthly_revenue = 0
         
@@ -668,13 +1088,6 @@ async def get_dashboard(
         occupancy_rate = 0.0
         if total_rooms > 0:
             occupancy_rate = (active_bookings / total_rooms) * 100
-        
-        # Get recent bookings (handle empty case)
-        recent_bookings = []
-        try:
-            recent_bookings = db.query(Booking).order_by(Booking.created_at.desc()).limit(5).all()
-        except Exception:
-            recent_bookings = []
         
         return DashboardStats(
             total_properties=total_properties,
