@@ -59,16 +59,24 @@ database (port 5432) <- api
 - [x] Add/Edit property forms with validation
 - [x] Mobile-responsive UI design
 
-### Phase 3: Property Management ⏳ IN PROGRESS
+### Phase 3: Property Management ✅ COMPLETED
 - [x] Property listing with CRUD operations
-- [x] Add/Edit property forms
-- [ ] Property details view with room management
-- [ ] Room listing and management interface
-- [ ] Calendar view for bookings
+- [x] Property pricing and capacity management
+- [x] Add/Edit property forms with Lebanese business model
+- [x] Property details view with room management
+- [x] Room listing and management interface
+- [x] Property-level pricing (whole property rental)
 
-### Phase 4: Advanced Features (Future)
+### Phase 4: Guest Management ✅ COMPLETED
+- [x] Guest profiles and management
+- [x] Guest listing interface
+- [x] Add guest form with Lebanese context (WhatsApp, nationality)
+- [x] Guest communication details (phone, email, WhatsApp)
+- [x] Guest dashboard integration
+
+### Phase 5: Advanced Features (Future)
 - [ ] Manual booking entry system
-- [ ] Guest management and profiles
+- [ ] Calendar view for bookings
 - [ ] Payment confirmation workflow
 - [ ] WhatsApp integration for guest communication
 - [ ] Automated messaging templates

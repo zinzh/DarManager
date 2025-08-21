@@ -10,12 +10,14 @@ import {
   Cog6ToothIcon,
   PlusIcon,
   ArrowRightOnRectangleIcon,
-  BuildingOfficeIcon
+  BuildingOfficeIcon,
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 
 interface DashboardStats {
   total_properties: number;
   total_rooms: number;
+  total_guests: number;
   active_bookings: number;
   monthly_revenue: number;
   occupancy_rate: number;
@@ -162,7 +164,7 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <div className="card p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -183,6 +185,18 @@ export default function DashboardPage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">Rooms</p>
                 <p className="text-2xl font-semibold text-gray-900">{stats.total_rooms}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <UserGroupIcon className="h-8 w-8 text-indigo-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Guests</p>
+                <p className="text-2xl font-semibold text-gray-900">{stats.total_guests}</p>
               </div>
             </div>
           </div>
@@ -230,13 +244,16 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="card p-6 hover:shadow-lg transition-shadow cursor-pointer">
+          <div 
+            onClick={() => router.push('/dashboard/guests')}
+            className="card p-6 hover:shadow-lg transition-shadow cursor-pointer"
+          >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Room Management</h3>
-                <p className="text-sm text-gray-500">Configure rooms and pricing</p>
+                <h3 className="text-lg font-medium text-gray-900">Manage Guests</h3>
+                <p className="text-sm text-gray-500">Add and manage guest information</p>
               </div>
-              <Cog6ToothIcon className="h-8 w-8 text-primary-600" />
+              <UserGroupIcon className="h-8 w-8 text-primary-600" />
             </div>
           </div>
 

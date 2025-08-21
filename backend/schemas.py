@@ -253,6 +253,7 @@ class Payment(PaymentBase):
 class DashboardStats(BaseModel):
     total_properties: int
     total_rooms: int
+    total_guests: int
     active_bookings: int
     monthly_revenue: Decimal
     occupancy_rate: float

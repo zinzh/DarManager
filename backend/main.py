@@ -12,11 +12,12 @@ from datetime import datetime, timedelta
 from typing import List
 
 from database import get_db, init_database
-from models import User, Property, Room, UserRole
+from models import User, Property, Room, Guest, UserRole
 from schemas import (
     UserCreate, UserLogin, Token, User as UserSchema,
     Property as PropertySchema, PropertyCreate,
     Room as RoomSchema, RoomCreate,
+    Guest as GuestSchema, GuestCreate, GuestUpdate,
     DashboardStats, MessageResponse
 )
 from auth import AuthService, get_current_user, get_current_admin
@@ -314,6 +315,87 @@ async def delete_room(
     
     return {"message": "Room deleted successfully"}
 
+# Guest endpoints
+@app.get("/api/guests", response_model=List[GuestSchema])
+async def get_guests(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all guests."""
+    guests = db.query(Guest).order_by(Guest.created_at.desc()).all()
+    return guests
+
+@app.get("/api/guests/{guest_id}", response_model=GuestSchema)
+async def get_guest(
+    guest_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get a specific guest."""
+    guest = db.query(Guest).filter(Guest.id == guest_id).first()
+    if not guest:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Guest not found"
+        )
+    return guest
+
+@app.post("/api/guests", response_model=GuestSchema)
+async def create_guest(
+    guest_create: GuestCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new guest."""
+    db_guest = Guest(**guest_create.dict())
+    db.add(db_guest)
+    db.commit()
+    db.refresh(db_guest)
+    return db_guest
+
+@app.put("/api/guests/{guest_id}", response_model=GuestSchema)
+async def update_guest(
+    guest_id: str,
+    guest_update: GuestUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a guest."""
+    db_guest = db.query(Guest).filter(Guest.id == guest_id).first()
+    if not db_guest:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Guest not found"
+        )
+    
+    # Update fields
+    update_data = guest_update.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(db_guest, field, value)
+    
+    db.commit()
+    db.refresh(db_guest)
+    return db_guest
+
+@app.delete("/api/guests/{guest_id}")
+async def delete_guest(
+    guest_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a guest."""
+    db_guest = db.query(Guest).filter(Guest.id == guest_id).first()
+    if not db_guest:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Guest not found"
+        )
+    
+    db.delete(db_guest)
+    db.commit()
+    
+    return {"message": "Guest deleted successfully"}
+
 # Dashboard endpoint
 @app.get("/api/dashboard", response_model=DashboardStats)
 async def get_dashboard(
@@ -327,6 +409,7 @@ async def get_dashboard(
     # Get counts
     total_properties = db.query(Property).count()
     total_rooms = db.query(Room).count()
+    total_guests = db.query(Guest).count()
     active_bookings = db.query(Booking).filter(
         Booking.status.in_(['confirmed', 'checked_in'])
     ).count()
@@ -348,6 +431,7 @@ async def get_dashboard(
     return DashboardStats(
         total_properties=total_properties,
         total_rooms=total_rooms,
+        total_guests=total_guests,
         active_bookings=active_bookings,
         monthly_revenue=monthly_revenue,
         occupancy_rate=occupancy_rate,
