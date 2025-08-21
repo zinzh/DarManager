@@ -257,13 +257,29 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="card p-6 hover:shadow-lg transition-shadow cursor-pointer">
+          <div 
+            onClick={() => router.push('/dashboard/calendar')}
+            className="card p-6 hover:shadow-lg transition-shadow cursor-pointer"
+          >
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-medium text-gray-900">New Booking</h3>
-                <p className="text-sm text-gray-500">Create a new reservation</p>
+                <h3 className="text-lg font-medium text-gray-900">Booking Calendar</h3>
+                <p className="text-sm text-gray-500">Visual calendar with color-coded bookings</p>
               </div>
               <CalendarIcon className="h-8 w-8 text-primary-600" />
+            </div>
+          </div>
+
+          <div 
+            onClick={() => router.push('/dashboard/bookings')}
+            className="card p-6 hover:shadow-lg transition-shadow cursor-pointer"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Manage Bookings</h3>
+                <p className="text-sm text-gray-500">List view and booking management</p>
+              </div>
+              <CalendarIcon className="h-8 w-8 text-gray-600" />
             </div>
           </div>
         </div>

@@ -29,17 +29,37 @@ interface Guest {
   updated_at: string;
 }
 
+interface Booking {
+  id: string;
+  property_id: string;
+  check_in_date: string;
+  check_out_date: string;
+  guests_count: number;
+  total_amount?: number;
+  status: string;
+  booking_source?: string;
+  notes?: string;
+  created_at: string;
+}
+
+interface Property {
+  id: string;
+  name: string;
+}
+
 export default function GuestDetailsPage() {
   const router = useRouter();
   const params = useParams();
   const guestId = params.id as string;
 
   const [guest, setGuest] = useState<Guest | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchGuest = async () => {
+    const fetchData = async () => {
       const token = localStorage.getItem('access_token');
       if (!token) {
         router.push('/login');
@@ -47,34 +67,42 @@ export default function GuestDetailsPage() {
       }
 
       try {
-        const response = await fetch(`/api/guests/${guestId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        // Fetch guest, bookings, and properties in parallel
+        const [guestResponse, bookingsResponse, propertiesResponse] = await Promise.all([
+          fetch(`/api/guests/${guestId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`/api/bookings?guest_id=${guestId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/properties', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
 
-        if (response.status === 401) {
+        if (guestResponse.status === 401 || bookingsResponse.status === 401 || propertiesResponse.status === 401) {
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
           router.push('/login');
           return;
         }
 
-        if (response.ok) {
-          const guestData = await response.json();
+        if (guestResponse.ok && bookingsResponse.ok && propertiesResponse.ok) {
+          const [guestData, bookingsData, propertiesData] = await Promise.all([
+            guestResponse.json(),
+            bookingsResponse.json(),
+            propertiesResponse.json()
+          ]);
+          
           setGuest(guestData);
+          setBookings(bookingsData);
+          setProperties(propertiesData);
         } else {
-          setError('Failed to load guest details');
+          setError('Failed to load data');
         }
       } catch (error) {
-        console.error('Error fetching guest:', error);
+        console.error('Error fetching data:', error);
         setError('Network error occurred');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchGuest();
+    fetchData();
   }, [guestId, router]);
 
   const handleDeleteGuest = async () => {
@@ -295,20 +323,92 @@ export default function GuestDetailsPage() {
           </div>
         </div>
 
-        {/* Future: Booking History Section */}
+        {/* Booking History Section */}
         <div className="card">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <h2 className="text-lg font-medium text-gray-900">Booking History</h2>
+            <button 
+              onClick={() => router.push(`/dashboard/bookings/new?guest_id=${guestId}`)}
+              className="btn-primary"
+            >
+              Create New Booking
+            </button>
           </div>
           <div className="p-6">
-            <div className="text-center py-8">
-              <CalendarIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No bookings yet</h3>
-              <p className="text-gray-600 mb-6">This guest hasn't made any bookings yet.</p>
-              <button className="btn-primary">
-                Create New Booking
-              </button>
-            </div>
+            {bookings.length === 0 ? (
+              <div className="text-center py-8">
+                <CalendarIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No bookings yet</h3>
+                <p className="text-gray-600 mb-6">This guest hasn't made any bookings yet.</p>
+                <button 
+                  onClick={() => router.push(`/dashboard/bookings/new?guest_id=${guestId}`)}
+                  className="btn-primary"
+                >
+                  Create First Booking
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {bookings.map((booking) => {
+                  const property = properties.find(p => p.id === booking.property_id);
+                  const nights = Math.ceil((new Date(booking.check_out_date).getTime() - new Date(booking.check_in_date).getTime()) / (1000 * 60 * 60 * 24));
+                  
+                  return (
+                    <div key={booking.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center space-x-3">
+                          <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                            booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            booking.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                            booking.status === 'checked_in' ? 'bg-green-100 text-green-800' :
+                            booking.status === 'checked_out' ? 'bg-gray-100 text-gray-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {booking.status.replace('_', ' ').toUpperCase()}
+                          </span>
+                          {booking.booking_source && (
+                            <span className="text-sm text-gray-500">via {booking.booking_source}</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => router.push(`/dashboard/bookings/${booking.id}`)}
+                          className="text-sm text-blue-600 hover:text-blue-800"
+                        >
+                          View Details
+                        </button>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <p className="font-medium text-gray-900">{property?.name || 'Unknown Property'}</p>
+                          <p className="text-gray-500">{booking.guests_count} guest{booking.guests_count !== 1 ? 's' : ''}</p>
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {new Date(booking.check_in_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {new Date(booking.check_out_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </p>
+                          <p className="text-gray-500">{nights} night{nights !== 1 ? 's' : ''}</p>
+                        </div>
+                        <div>
+                          {booking.total_amount && (
+                            <>
+                              <p className="font-medium text-gray-900">${booking.total_amount}</p>
+                              <p className="text-gray-500">Total</p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {booking.notes && (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <p className="text-sm text-gray-600">{booking.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </main>

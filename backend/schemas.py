@@ -149,6 +149,22 @@ class Room(RoomBase):
     class Config:
         from_attributes = True
 
+class RoomWithStatus(BaseModel):
+    """Room schema with calculated dynamic status."""
+    id: UUID4
+    property_id: UUID4
+    name: str
+    description: Optional[str] = None
+    capacity: int = 1
+    price_per_night: Optional[Decimal] = None
+    status: str  # This will be the calculated status
+    keybox_code: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
 # Guest schemas
 class GuestBase(BaseModel):
     first_name: str
@@ -187,13 +203,13 @@ class BookingBase(BaseModel):
     check_out_date: date
     guests_count: int = 1
     total_amount: Optional[Decimal] = None
-    status: BookingStatusSchema = BookingStatusSchema.PENDING
+    status: str = "pending"  # Use string instead of enum
     booking_source: Optional[str] = None
     notes: Optional[str] = None
 
 class BookingCreate(BookingBase):
     property_id: UUID4
-    room_id: UUID4
+    room_id: Optional[UUID4] = None  # Optional for property-level bookings
     guest_id: UUID4
 
 class BookingUpdate(BaseModel):
@@ -201,14 +217,14 @@ class BookingUpdate(BaseModel):
     check_out_date: Optional[date] = None
     guests_count: Optional[int] = None
     total_amount: Optional[Decimal] = None
-    status: Optional[BookingStatusSchema] = None
+    status: Optional[str] = None
     booking_source: Optional[str] = None
     notes: Optional[str] = None
 
 class Booking(BookingBase):
     id: UUID4
     property_id: UUID4
-    room_id: UUID4
+    room_id: Optional[UUID4] = None  # Optional for property-level bookings
     guest_id: UUID4
     created_at: datetime
     updated_at: datetime

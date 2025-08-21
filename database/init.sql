@@ -9,7 +9,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Create enum types for future use
-CREATE TYPE booking_status AS ENUM ('pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled');
+-- CREATE TYPE booking_status AS ENUM ('pending', 'confirmed', 'checked_in', 'checked_out', 'cancelled'); -- Removed enum, using varchar instead
 CREATE TYPE payment_status AS ENUM ('pending', 'partial', 'completed', 'refunded');
 CREATE TYPE payment_method AS ENUM ('cash', 'omt', 'whish', 'bank_transfer', 'other');
 CREATE TYPE room_status AS ENUM ('available', 'occupied', 'cleaning', 'maintenance', 'out_of_order');
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     check_out_date DATE NOT NULL,
     guests_count INTEGER DEFAULT 1,
     total_amount DECIMAL(10,2),
-    status booking_status DEFAULT 'pending',
+    status VARCHAR(20) DEFAULT 'pending',
     booking_source VARCHAR(100), -- 'whatsapp', 'instagram', 'phone', 'walk_in', etc.
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

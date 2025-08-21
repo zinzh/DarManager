@@ -8,16 +8,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import List
 
 from database import get_db, init_database
-from models import User, Property, Room, Guest, UserRole
+from models import User, Property, Room, Guest, Booking, UserRole
 from schemas import (
     UserCreate, UserLogin, Token, User as UserSchema,
     Property as PropertySchema, PropertyCreate,
-    Room as RoomSchema, RoomCreate, RoomUpdate,
+    Room as RoomSchema, RoomCreate, RoomUpdate, RoomWithStatus,
     Guest as GuestSchema, GuestCreate, GuestUpdate,
+    Booking as BookingSchema, BookingCreate, BookingUpdate,
     DashboardStats, MessageResponse
 )
 from auth import AuthService, get_current_user, get_current_admin
@@ -39,6 +40,37 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def calculate_room_status(room: Room, db: Session) -> str:
+    """Calculate dynamic room status based on current date and bookings."""
+    today = date.today()
+    
+    # Check for active bookings for this room's property (Lebanese model: whole property)
+    active_booking = db.query(Booking).filter(
+        Booking.property_id == room.property_id,
+        Booking.status.in_(["confirmed", "checked_in"]),
+        Booking.check_in_date <= today,
+        Booking.check_out_date > today
+    ).first()
+    
+    if active_booking:
+        if active_booking.status == "checked_in":
+            return "occupied"
+        elif active_booking.status == "confirmed":
+            return "occupied"  # Confirmed booking for today means occupied
+    
+    # Check if there's a checkout today (needs cleaning)
+    checkout_today = db.query(Booking).filter(
+        Booking.property_id == room.property_id,
+        Booking.status.in_(["confirmed", "checked_in"]),
+        Booking.check_out_date == today
+    ).first()
+    
+    if checkout_today:
+        return "cleaning"
+    
+    # Default to the room's manual status or "available"
+    return room.status or "available"
 
 # Initialize database on startup
 @app.on_event("startup")
@@ -231,33 +263,68 @@ async def delete_property(
     return {"message": "Property deleted successfully"}
 
 # Room endpoints
-@app.get("/api/rooms", response_model=List[RoomSchema])
+@app.get("/api/rooms", response_model=List[RoomWithStatus])
 async def get_rooms(
     property_id: str = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all rooms, optionally filtered by property."""
+    """Get all rooms with calculated dynamic status."""
     query = db.query(Room)
     if property_id:
         query = query.filter(Room.property_id == property_id)
-    rooms = query.all()
-    return rooms
+    
+    rooms = query.order_by(Room.created_at.desc()).all()
+    
+    # Calculate dynamic status for each room
+    rooms_with_status = []
+    for room in rooms:
+        calculated_status = calculate_room_status(room, db)
+        room_dict = {
+            'id': room.id,
+            'property_id': room.property_id,
+            'name': room.name,
+            'description': room.description,
+            'capacity': room.capacity,
+            'price_per_night': room.price_per_night,
+            'status': calculated_status,  # Use calculated status
+            'keybox_code': room.keybox_code,
+            'created_at': room.created_at,
+            'updated_at': room.updated_at
+        }
+        rooms_with_status.append(RoomWithStatus(**room_dict))
+    
+    return rooms_with_status
 
-@app.get("/api/rooms/{room_id}", response_model=RoomSchema)
+@app.get("/api/rooms/{room_id}", response_model=RoomWithStatus)
 async def get_room(
     room_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get a single room by ID."""
+    """Get a single room by ID with calculated dynamic status."""
     db_room = db.query(Room).filter(Room.id == room_id).first()
     if not db_room:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Room not found"
         )
-    return db_room
+    
+    # Calculate dynamic status
+    calculated_status = calculate_room_status(db_room, db)
+    room_dict = {
+        'id': db_room.id,
+        'property_id': db_room.property_id,
+        'name': db_room.name,
+        'description': db_room.description,
+        'capacity': db_room.capacity,
+        'price_per_night': db_room.price_per_night,
+        'status': calculated_status,  # Use calculated status
+        'keybox_code': db_room.keybox_code,
+        'created_at': db_room.created_at,
+        'updated_at': db_room.updated_at
+    }
+    return RoomWithStatus(**room_dict)
 
 @app.post("/api/rooms", response_model=RoomSchema)
 async def create_room(
@@ -395,6 +462,175 @@ async def delete_guest(
     db.commit()
     
     return {"message": "Guest deleted successfully"}
+
+# Booking endpoints
+@app.get("/api/bookings", response_model=List[BookingSchema])
+async def get_bookings(
+    guest_id: str = None,
+    property_id: str = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all bookings with optional filtering by guest or property."""
+    query = db.query(Booking)
+    
+    if guest_id:
+        query = query.filter(Booking.guest_id == guest_id)
+    if property_id:
+        query = query.filter(Booking.property_id == property_id)
+    
+    bookings = query.order_by(Booking.created_at.desc()).all()
+    return bookings
+
+@app.get("/api/bookings/{booking_id}", response_model=BookingSchema)
+async def get_booking(
+    booking_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get a specific booking."""
+    booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not booking:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Booking not found"
+        )
+    return booking
+
+@app.post("/api/bookings", response_model=BookingSchema)
+async def create_booking(
+    booking_create: BookingCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new booking."""
+    # Validate that property exists
+    property_exists = db.query(Property).filter(Property.id == booking_create.property_id).first()
+    if not property_exists:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Property not found"
+        )
+    
+    # Validate that guest exists
+    guest_exists = db.query(Guest).filter(Guest.id == booking_create.guest_id).first()
+    if not guest_exists:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Guest not found"
+        )
+    
+    # Validate dates
+    if booking_create.check_in_date >= booking_create.check_out_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Check-out date must be after check-in date"
+        )
+    
+    # Check for overlapping bookings (Lebanese model: whole property booking)
+    overlapping_bookings = db.query(Booking).filter(
+        Booking.property_id == booking_create.property_id,
+        Booking.status.in_(["confirmed", "checked_in"]),  # Only active bookings
+        # Date overlap logic: new booking overlaps if:
+        # (new_start < existing_end) AND (new_end > existing_start)
+        Booking.check_out_date > booking_create.check_in_date,
+        Booking.check_in_date < booking_create.check_out_date
+    ).first()
+    
+    if overlapping_bookings:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Property is already booked from {overlapping_bookings.check_in_date} to {overlapping_bookings.check_out_date}"
+        )
+    
+    db_booking = Booking(**booking_create.dict())
+    db.add(db_booking)
+    
+    # Note: Room status is now calculated dynamically based on current date vs booking dates
+    # No need to manually update room status here
+    
+    db.commit()
+    db.refresh(db_booking)
+    return db_booking
+
+@app.put("/api/bookings/{booking_id}", response_model=BookingSchema)
+async def update_booking(
+    booking_id: str,
+    booking_update: BookingUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a booking."""
+    db_booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not db_booking:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Booking not found"
+        )
+    
+    # Update fields
+    update_data = booking_update.dict(exclude_unset=True)
+    
+    # Validate dates if they're being updated
+    if 'check_in_date' in update_data or 'check_out_date' in update_data:
+        check_in = update_data.get('check_in_date', db_booking.check_in_date)
+        check_out = update_data.get('check_out_date', db_booking.check_out_date)
+        if check_in >= check_out:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Check-out date must be after check-in date"
+            )
+        
+        # Check for overlapping bookings when dates are changed
+        overlapping_bookings = db.query(Booking).filter(
+            Booking.property_id == db_booking.property_id,
+            Booking.id != booking_id,  # Exclude current booking
+            Booking.status.in_(["confirmed", "checked_in"]),  # Only active bookings
+            # Date overlap logic
+            Booking.check_out_date > check_in,
+            Booking.check_in_date < check_out
+        ).first()
+        
+        if overlapping_bookings:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Property is already booked from {overlapping_bookings.check_in_date} to {overlapping_bookings.check_out_date}"
+            )
+    
+    # Store old status for comparison
+    old_status = db_booking.status
+    
+    for field, value in update_data.items():
+        setattr(db_booking, field, value)
+    
+    # Note: Room status is now calculated dynamically based on current date vs booking dates
+    # No need to manually update room status here
+    
+    db.commit()
+    db.refresh(db_booking)
+    return db_booking
+
+@app.delete("/api/bookings/{booking_id}")
+async def delete_booking(
+    booking_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a booking."""
+    db_booking = db.query(Booking).filter(Booking.id == booking_id).first()
+    if not db_booking:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Booking not found"
+        )
+    
+    # Note: Room status is now calculated dynamically based on current date vs booking dates
+    # No need to manually update room status here
+    
+    db.delete(db_booking)
+    db.commit()
+    
+    return {"message": "Booking deleted successfully"}
 
 # Dashboard endpoint
 @app.get("/api/dashboard", response_model=DashboardStats)

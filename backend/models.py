@@ -126,7 +126,7 @@ class Booking(Base):
     check_out_date = Column(Date, nullable=False)
     guests_count = Column(Integer, default=1)
     total_amount = Column(Numeric(10, 2))
-    status = Column(Enum(BookingStatus), default=BookingStatus.PENDING)
+    status = Column(String(20), default="pending")
     booking_source = Column(String(100))  # 'whatsapp', 'instagram', 'phone', 'walk_in', etc.
     notes = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
