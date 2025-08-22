@@ -50,7 +50,7 @@ export default function LandingPage() {
     {
       icon: CreditCardIcon,
       title: 'Payment Tracking',
-      description: 'Track payments, revenue, and financial reporting with Lebanese payment methods.'
+      description: 'Track payments, revenue, and financial reporting with multiple payment methods.'
     },
     {
       icon: ChartBarIcon,
@@ -109,7 +109,7 @@ export default function LandingPage() {
               <span className="block text-blue-600">Made Simple</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              The complete property management solution designed specifically for Lebanese guesthouses. 
+              The complete property management solution for modern guesthouses and hotels. 
               Manage bookings, guests, and revenue all in one place.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -128,7 +128,7 @@ export default function LandingPage() {
               </a>
             </div>
             <p className="text-sm text-gray-500 mt-4">
-              🇱🇧 Built for Lebanon • Enterprise solutions available
+              Enterprise solutions available • Trusted worldwide
             </p>
           </div>
         </div>
@@ -160,13 +160,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Lebanese Features Section */}
+      {/* Modern Features Section */}
       <section className="py-20 bg-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-6">
-                Built for the Lebanese Market
+                Built for Modern Hospitality
               </h2>
               <div className="space-y-4">
                 <div className="flex items-start">
@@ -179,8 +179,8 @@ export default function LandingPage() {
                 <div className="flex items-start">
                   <CheckIcon className="h-6 w-6 text-green-600 mt-1 mr-3 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold text-gray-900">Lebanese Payment Methods</h3>
-                    <p className="text-gray-600">OMT, Whish, bank transfers, and cash payments</p>
+                    <h3 className="font-semibold text-gray-900">Flexible Payment Methods</h3>
+                    <p className="text-gray-600">Multiple payment options, transfers, and cash tracking</p>
                   </div>
                 </div>
                 <div className="flex items-start">
@@ -193,8 +193,8 @@ export default function LandingPage() {
                 <div className="flex items-start">
                   <CheckIcon className="h-6 w-6 text-green-600 mt-1 mr-3 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold text-gray-900">Arabic & English Support</h3>
-                    <p className="text-gray-600">Full bilingual interface and documentation</p>
+                    <h3 className="font-semibold text-gray-900">Multi-Language Support</h3>
+                    <p className="text-gray-600">Intuitive interface with comprehensive documentation</p>
                   </div>
                 </div>
               </div>
@@ -203,7 +203,7 @@ export default function LandingPage() {
               <div className="text-center">
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Ready to Get Started?</h3>
                 <p className="text-gray-600 mb-6">
-                  Join Lebanese property owners who trust DarManager for their business
+                  Join property owners worldwide who trust DarManager for their business
                 </p>
                 <a
                   href="mailto:contact@darmanager.com?subject=DarManager Setup Request"
@@ -229,7 +229,7 @@ export default function LandingPage() {
             Ready to Transform Your Property Management?
           </h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join hundreds of Lebanese property owners who have streamlined their operations with DarManager
+            Join hundreds of property owners who have streamlined their operations with DarManager
           </p>
           <a
             href="mailto:contact@darmanager.com?subject=DarManager Partnership"
@@ -250,7 +250,7 @@ export default function LandingPage() {
                 <span className="text-xl font-bold text-gray-900">DarManager</span>
               </div>
               <p className="text-gray-600">
-                The leading property management platform for Lebanese guesthouses.
+                The leading property management platform for modern hospitality businesses.
               </p>
             </div>
             
@@ -288,7 +288,7 @@ export default function LandingPage() {
           </div>
           
           <div className="border-t border-gray-200 mt-8 pt-8 text-center text-gray-600">
-            <p>&copy; 2025 DarManager. All rights reserved. Made with ❤️ for Lebanon 🇱🇧</p>
+            <p>&copy; 2025 DarManager. All rights reserved.</p>
             <div className="mt-2">
               <button
                 onClick={() => router.push('/admin-login')}
