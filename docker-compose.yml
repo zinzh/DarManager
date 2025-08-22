@@ -14,7 +14,7 @@ services:
       - "5432:5432"
     networks:
       - darmanager_network
-    restart: unless-stopped
+    restart: always
 
   # FastAPI Backend
   api:
@@ -35,7 +35,7 @@ services:
       - database
     networks:
       - darmanager_network
-    restart: unless-stopped
+    restart: always
 
   # Next.js Frontend
   frontend:
@@ -56,7 +56,7 @@ services:
       - api
     networks:
       - darmanager_network
-    restart: unless-stopped
+    restart: always
 
   # Nginx Reverse Proxy
   nginx:
@@ -72,7 +72,7 @@ services:
       - api
     networks:
       - darmanager_network
-    restart: unless-stopped
+    restart: always
 
 volumes:
   postgres_data:
