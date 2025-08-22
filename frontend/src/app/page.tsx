@@ -71,27 +71,31 @@ export default function LandingPage() {
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center">
-              <BuildingOfficeIcon className="h-8 w-8 text-blue-600 mr-3" />
-              <span className="text-2xl font-bold text-gray-900">DarManager</span>
+          <div className="flex justify-between items-center py-4 lg:py-6">
+            <div className="flex items-center min-w-0 flex-shrink-0">
+              <BuildingOfficeIcon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mr-2 sm:mr-3" />
+              <span className="text-lg sm:text-2xl font-bold text-gray-900 truncate">DarManager</span>
             </div>
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => router.push('/access')}
-                className="text-gray-700 hover:text-blue-600 font-medium"
-              >
-                Client Login
-              </button>
-              <a
-                href="mailto:contact@darmanager.com"
-                className="text-gray-700 hover:text-blue-600 font-medium"
-              >
-                Contact Sales
-              </a>
+            
+            {/* Mobile Layout */}
+            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <button
+                  onClick={() => router.push('/access')}
+                  className="text-xs sm:text-sm text-gray-700 hover:text-blue-600 font-medium whitespace-nowrap"
+                >
+                  Client Login
+                </button>
+                <a
+                  href="mailto:contact@darmanager.com"
+                  className="hidden sm:inline text-gray-700 hover:text-blue-600 font-medium whitespace-nowrap"
+                >
+                  Contact Sales
+                </a>
+              </div>
               <a
                 href="mailto:demo@darmanager.com"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium"
+                className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-blue-700 font-medium text-xs sm:text-sm whitespace-nowrap"
               >
                 Request Demo
               </a>

@@ -63,9 +63,9 @@ async def get_tenant_from_subdomain(request: Request, db: Session) -> Optional[T
         if ".localhost" in host:
             # tenant.localhost -> tenant
             subdomain = host.split(".localhost")[0]
-        elif ".darmanager.com" in host:
-            # tenant.darmanager.com -> tenant
-            subdomain = host.split(".darmanager.com")[0]
+        elif ".darmanager.net" in host:
+            # tenant.darmanager.net -> tenant
+            subdomain = host.split(".darmanager.net")[0]
     
     if not subdomain:
         return None
@@ -94,7 +94,7 @@ async def require_tenant(
     if not tenant:
         raise HTTPException(
             status_code=404,
-            detail="Tenant not found. Please access via your subdomain (e.g., yourname.darmanager.com)"
+            detail="Tenant not found. Please access via your subdomain (e.g., yourname.darmanager.net)"
         )
     return tenant
 

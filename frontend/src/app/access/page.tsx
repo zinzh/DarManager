@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   BuildingOfficeIcon,
@@ -12,6 +12,21 @@ import {
 export default function AccessPage() {
   const router = useRouter();
   const [subdomain, setSubdomain] = useState('');
+  const [domainSuffix, setDomainSuffix] = useState('.darmanager.net');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    // Only run on client side to avoid hydration mismatch
+    setIsClient(true);
+    
+    // Detect domain based on current hostname
+    const currentHost = window.location.hostname;
+    if (currentHost === 'localhost' || currentHost.includes('localhost')) {
+      setDomainSuffix('.localhost');
+    } else {
+      setDomainSuffix('.darmanager.net');
+    }
+  }, []);
 
   const handleSubdomainAccess = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -96,7 +111,7 @@ export default function AccessPage() {
                     placeholder="yourcompany"
                   />
                   <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-                    .darmanager.net
+                    {isClient ? domainSuffix : '.darmanager.net'}
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
