@@ -245,7 +245,7 @@ export default function SuperAdminDashboard() {
                           </span>
                         </div>
                         <p className="text-sm text-gray-500">
-                          {tenant.subdomain}.darmanager.com • {tenant.contact_email}
+                          {tenant.subdomain}.darmanager.net • {tenant.contact_email}
                         </p>
                         <p className="text-xs text-gray-400">
                           Created {new Date(tenant.created_at).toLocaleDateString()}
@@ -469,7 +469,7 @@ function CreateTenantModal({ onClose, onSuccess }: { onClose: () => void; onSucc
                       required
                     />
                     <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-                      .darmanager.com
+                      .darmanager.net
                     </span>
                   </div>
                 </div>
@@ -609,7 +609,7 @@ function CreateTenantModal({ onClose, onSuccess }: { onClose: () => void; onSucc
                 <h4 className="font-medium text-gray-900 mb-3">Tenant Details:</h4>
                 <div className="space-y-2 text-sm">
                   <p><strong>Business:</strong> {createdTenant?.name}</p>
-                  <p><strong>URL:</strong> https://{createdTenant?.subdomain}.darmanager.com</p>
+                  <p><strong>URL:</strong> https://{createdTenant?.subdomain}.darmanager.net</p>
                   <p><strong>Admin Email:</strong> {formData.contact_email}</p>
                   <p><strong>Username:</strong> {formData.admin_username}</p>
                   <p><strong>Password:</strong> <code className="bg-yellow-100 px-2 py-1 rounded">{generatedPassword}</code></p>

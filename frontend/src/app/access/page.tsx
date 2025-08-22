@@ -17,10 +17,20 @@ export default function AccessPage() {
     if (e) e.preventDefault();
     
     if (subdomain.trim()) {
-      // Force a complete page reload to the tenant subdomain
-      // In development, redirect to subdomain.localhost/login
-      // In production, this would be subdomain.darmanager.com/login
-      const targetUrl = `http://${subdomain.toLowerCase()}.localhost/login`;
+      // Detect if we're in development or production
+      const currentHost = window.location.hostname;
+      let targetDomain;
+      
+      if (currentHost === 'localhost' || currentHost.includes('localhost')) {
+        // Development: use .localhost
+        targetDomain = 'localhost';
+      } else {
+        // Production: use the actual domain (darmanager.net)
+        targetDomain = currentHost.includes('darmanager.net') ? 'darmanager.net' : 'darmanager.net';
+      }
+      
+      const protocol = window.location.protocol;
+      const targetUrl = `${protocol}//${subdomain.toLowerCase()}.${targetDomain}/login`;
       
       // Try multiple methods to ensure the redirect works
       try {
@@ -86,11 +96,11 @@ export default function AccessPage() {
                     placeholder="yourcompany"
                   />
                   <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-                    .darmanager.com
+                    .darmanager.net
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
-                  Example: If your URL is "myhotel.darmanager.com", enter "myhotel"
+                  Example: If your URL is "myhotel.darmanager.net", enter "myhotel"
                 </p>
               </div>
 
@@ -121,9 +131,9 @@ export default function AccessPage() {
             <div className="mt-6 bg-gray-50 rounded-lg p-4">
               <h3 className="text-sm font-medium text-gray-900 mb-2">Example URLs:</h3>
               <div className="space-y-1 text-xs text-gray-600">
-                <p>• Hotel Phoenicia: <code>phoenicia.darmanager.com</code></p>
-                <p>• Byblos Guesthouse: <code>byblos.darmanager.com</code></p>
-                <p>• Baalbek Inn: <code>baalbek.darmanager.com</code></p>
+                <p>• Hotel Phoenicia: <code>phoenicia.darmanager.net</code></p>
+                <p>• Demo Company: <code>demo.darmanager.net</code></p>
+                <p>• Test Hotel: <code>testhotel.darmanager.net</code></p>
               </div>
             </div>
           </div>

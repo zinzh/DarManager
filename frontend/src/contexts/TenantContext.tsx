@@ -58,9 +58,9 @@ export const TenantProvider: React.FC<TenantProviderProps> = ({ children }) => {
         if (host.includes('.localhost')) {
           // tenant.localhost -> tenant
           detectedSubdomain = host.split('.localhost')[0];
-        } else if (host.includes('.darmanager.com')) {
-          // tenant.darmanager.com -> tenant
-          detectedSubdomain = host.split('.darmanager.com')[0];
+        } else if (host.includes('.darmanager.net')) {
+          // tenant.darmanager.net -> tenant
+          detectedSubdomain = host.split('.darmanager.net')[0];
         } else if (host === 'localhost' || host.startsWith('localhost:')) {
           // Development mode - no tenant
           detectedSubdomain = null;

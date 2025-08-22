@@ -155,7 +155,7 @@ export default function OnboardingPage() {
               <div>
                 <span className="font-medium text-blue-800">Your URL:</span>
                 <span className="ml-2 text-blue-700">
-                  {tenant.subdomain}.darmanager.com
+                  {tenant.subdomain}.darmanager.net
                 </span>
               </div>
               <div>
@@ -237,7 +237,7 @@ export default function OnboardingPage() {
             </div>
             <div>
               <h4 className="font-medium text-gray-900">📧 Email Support</h4>
-              <p>Email us at support@darmanager.com for help.</p>
+              <p>Email us at support@darmanager.net for help.</p>
             </div>
           </div>
         </div>

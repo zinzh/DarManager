@@ -212,7 +212,7 @@ export default function LandingPage() {
                   Get Your Instance
                 </a>
                 <p className="text-sm text-gray-500 mt-3">
-                  Your own branded subdomain: yourname.darmanager.com
+                  Your own branded subdomain: yourname.darmanager.net
                 </p>
               </div>
             </div>

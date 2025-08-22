@@ -197,7 +197,7 @@ export default function TenantDetailPage() {
                           className="flex-1 block w-full border-gray-300 bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
                         />
                         <span className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-                          .darmanager.com
+                          .darmanager.net
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-gray-500">
@@ -321,7 +321,7 @@ export default function TenantDetailPage() {
 
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <a
-                    href={`https://${tenant.subdomain}.darmanager.com`}
+                    href={`https://${tenant.subdomain}.darmanager.net`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-500 text-sm font-medium"
