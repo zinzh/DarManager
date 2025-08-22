@@ -42,6 +42,13 @@ interface Room {
   updated_at: string;
 }
 
+interface PropertyRevenue {
+  property_id: string;
+  property_name: string;
+  total_revenue: number;
+  bookings_count: number;
+}
+
 export default function PropertyDetailsPage() {
   const router = useRouter();
   const params = useParams();
@@ -49,6 +56,7 @@ export default function PropertyDetailsPage() {
 
   const [property, setProperty] = useState<Property | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [revenue, setRevenue] = useState<PropertyRevenue | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -92,6 +100,18 @@ export default function PropertyDetailsPage() {
         if (roomsResponse.ok) {
           const roomsData = await roomsResponse.json();
           setRooms(roomsData);
+        }
+
+        // Fetch revenue for this property
+        const revenueResponse = await fetch(`/api/properties/${propertyId}/revenue`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (revenueResponse.ok) {
+          const revenueData = await revenueResponse.json();
+          setRevenue(revenueData);
         }
 
       } catch (error) {
@@ -216,6 +236,28 @@ export default function PropertyDetailsPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        {/* Revenue Summary */}
+        {revenue && revenue.total_revenue > 0 && (
+          <div className="card mb-8 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-800 mb-1">Total Revenue</p>
+                  <p className="text-3xl font-bold text-green-900">${Number(revenue.total_revenue || 0).toFixed(2)}</p>
+                  <p className="text-sm text-green-700 mt-1">
+                    from {revenue.bookings_count} completed booking{revenue.bookings_count !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                <div className="text-green-600">
+                  <svg className="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Property Details */}
         <div className="card mb-8">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -266,7 +308,7 @@ export default function PropertyDetailsPage() {
                     Price per Night
                   </h3>
                   <p className="text-gray-900 text-lg font-semibold">
-                    ${property.price_per_night.toFixed(2)} USD
+                    ${Number(property.price_per_night || 0).toFixed(2)} USD
                   </p>
                 </div>
               )}

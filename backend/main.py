@@ -7,9 +7,10 @@ from fastapi import FastAPI, HTTPException, Depends, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 import os
 from datetime import datetime, timedelta, date
-from typing import List
+from typing import List, Optional
 
 from database import get_db, init_database
 from models import User, Property, Room, Guest, Booking, Tenant, UserRole
@@ -20,7 +21,8 @@ from schemas import (
     Room as RoomSchema, RoomCreate, RoomUpdate, RoomWithStatus,
     Guest as GuestSchema, GuestCreate, GuestUpdate,
     Booking as BookingSchema, BookingCreate, BookingUpdate,
-    DashboardStats, MessageResponse
+    DashboardStats, MessageResponse,
+    GuestRevenue, PropertyRevenue, FinancialReport
 )
 from auth import AuthService, get_current_user, get_current_admin
 
@@ -1052,7 +1054,6 @@ async def get_dashboard(
 ):
     """Get dashboard statistics for current user's tenant."""
     try:
-        from sqlalchemy import func
         from models import Booking, Payment
         from tenant import get_user_tenant_id
         
@@ -1102,24 +1103,25 @@ async def get_dashboard(
                 Property.tenant_id == tenant_id
             ).order_by(Booking.created_at.desc()).limit(5).all()
         
-        # Get monthly revenue (handle case where Payment table doesn't exist or is empty)
-        current_month = datetime.now().replace(day=1)
+        # Get total revenue from checked-out bookings
+        # Revenue is calculated from bookings with status 'checked_out' 
         try:
             if current_user.role == UserRole.SUPER_ADMIN:
-                # Super admin sees all revenue
-                monthly_revenue = db.query(func.sum(Payment.amount)).filter(
-                    Payment.payment_date >= current_month,
-                    Payment.payment_status == 'completed'
+                # Super admin sees all revenue from checked-out bookings
+                total_revenue = db.query(func.sum(Booking.total_amount)).filter(
+                    Booking.status == 'checked_out'
                 ).scalar() or 0
             else:
-                # Regular users see only their tenant's revenue (via bookings)
-                monthly_revenue = db.query(func.sum(Payment.amount)).join(Booking).join(Property).filter(
+                # Regular users see only their tenant's revenue
+                total_revenue = db.query(func.sum(Booking.total_amount)).join(Property).filter(
                     Property.tenant_id == tenant_id,
-                    Payment.payment_date >= current_month,
-                    Payment.payment_status == 'completed'
+                    Booking.status == 'checked_out'
                 ).scalar() or 0
         except Exception:
-            monthly_revenue = 0
+            total_revenue = 0
+        
+        # For backward compatibility, keep monthly_revenue as total_revenue for now
+        monthly_revenue = total_revenue
         
         # Calculate occupancy rate (simplified)
         occupancy_rate = 0.0
@@ -1150,6 +1152,182 @@ async def get_api_status():
         "message": "DarManager API is running",
         "version": "1.0.0"
     }
+
+# Revenue and Financial endpoints
+@app.get("/api/guests/{guest_id}/revenue", response_model=GuestRevenue)
+async def get_guest_revenue(
+    guest_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get total revenue from a specific guest (checked-out bookings only)."""
+    from tenant import get_user_tenant_id, validate_tenant_access
+    
+    # Get the guest
+    db_guest = db.query(Guest).filter(Guest.id == guest_id).first()
+    if not db_guest:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Guest not found"
+        )
+    
+    # Validate tenant access
+    if not validate_tenant_access(current_user, str(db_guest.tenant_id)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Guest not found"
+        )
+    
+    # Calculate total spent by guest (only checked-out bookings)
+    total_spent = db.query(func.sum(Booking.total_amount)).filter(
+        Booking.guest_id == guest_id,
+        Booking.status == 'checked_out'
+    ).scalar() or 0
+    
+    # Count bookings
+    bookings_count = db.query(Booking).filter(
+        Booking.guest_id == guest_id,
+        Booking.status == 'checked_out'
+    ).count()
+    
+    return GuestRevenue(
+        guest_id=db_guest.id,
+        guest_name=f"{db_guest.first_name} {db_guest.last_name}",
+        total_spent=total_spent,
+        bookings_count=bookings_count
+    )
+
+@app.get("/api/properties/{property_id}/revenue", response_model=PropertyRevenue)
+async def get_property_revenue(
+    property_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get total revenue from a specific property (checked-out bookings only)."""
+    from tenant import get_user_tenant_id, validate_tenant_access
+    
+    # Get the property
+    db_property = db.query(Property).filter(Property.id == property_id).first()
+    if not db_property:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Property not found"
+        )
+    
+    # Validate tenant access
+    if not validate_tenant_access(current_user, str(db_property.tenant_id)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Property not found"
+        )
+    
+    # Calculate total revenue for property (only checked-out bookings)
+    total_revenue = db.query(func.sum(Booking.total_amount)).filter(
+        Booking.property_id == property_id,
+        Booking.status == 'checked_out'
+    ).scalar() or 0
+    
+    # Count bookings
+    bookings_count = db.query(Booking).filter(
+        Booking.property_id == property_id,
+        Booking.status == 'checked_out'
+    ).count()
+    
+    return PropertyRevenue(
+        property_id=db_property.id,
+        property_name=db_property.name,
+        total_revenue=total_revenue,
+        bookings_count=bookings_count
+    )
+
+@app.get("/api/financial-report", response_model=FinancialReport)
+async def get_financial_report(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get financial report for specified date range."""
+    from tenant import get_user_tenant_id
+    
+    tenant_id = get_user_tenant_id(current_user)
+    
+    # Parse dates or use defaults
+    if not end_date:
+        end_dt = datetime.now().date()
+    else:
+        end_dt = datetime.strptime(end_date, "%Y-%m-%d").date()
+    
+    if not start_date:
+        start_dt = end_dt - timedelta(days=30)
+    else:
+        start_dt = datetime.strptime(start_date, "%Y-%m-%d").date()
+    
+    # Base query for bookings
+    base_query = db.query(Booking).filter(
+        Booking.status == 'checked_out',
+        Booking.check_out_date >= start_dt,
+        Booking.check_out_date <= end_dt
+    )
+    
+    # Filter by tenant if not super admin
+    if current_user.role != UserRole.SUPER_ADMIN and tenant_id:
+        base_query = base_query.join(Property).filter(Property.tenant_id == tenant_id)
+    
+    bookings = base_query.all()
+    
+    # Calculate total revenue
+    total_revenue = sum(b.total_amount or 0 for b in bookings)
+    
+    # Get revenue by property
+    property_revenues = {}
+    for booking in bookings:
+        prop_id = str(booking.property_id)
+        if prop_id not in property_revenues:
+            prop = booking.property
+            property_revenues[prop_id] = {
+                'property_id': prop.id,
+                'property_name': prop.name,
+                'total_revenue': 0,
+                'bookings_count': 0
+            }
+        property_revenues[prop_id]['total_revenue'] += booking.total_amount or 0
+        property_revenues[prop_id]['bookings_count'] += 1
+    
+    # Convert to list of PropertyRevenue objects
+    properties = [PropertyRevenue(**data) for data in property_revenues.values()]
+    
+    # Calculate breakdown by booking source
+    booking_sources = {}
+    for booking in bookings:
+        source = booking.booking_source or 'unknown'
+        if source not in booking_sources:
+            booking_sources[source] = 0
+        booking_sources[source] += booking.total_amount or 0
+    
+    # Calculate daily revenue
+    daily_revenue = {}
+    for booking in bookings:
+        day = str(booking.check_out_date)
+        if day not in daily_revenue:
+            daily_revenue[day] = 0
+        daily_revenue[day] += booking.total_amount or 0
+    
+    # Convert daily revenue to list format
+    daily_revenue_list = [
+        {'date': date, 'revenue': revenue}
+        for date, revenue in sorted(daily_revenue.items())
+    ]
+    
+    return FinancialReport(
+        start_date=start_dt,
+        end_date=end_dt,
+        total_revenue=total_revenue,
+        properties=properties,
+        payment_methods_breakdown={},  # Not using payments table yet
+        booking_sources_breakdown=booking_sources,
+        daily_revenue=daily_revenue_list
+    )
 
 if __name__ == "__main__":
     import uvicorn

@@ -38,6 +38,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>({
     total_properties: 0,
     total_rooms: 0,
+    total_guests: 0,
     active_bookings: 0,
     monthly_revenue: 0,
     occupancy_rate: 0,
@@ -213,14 +214,16 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="card p-6">
+          <div className="card p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <CurrencyDollarIcon className="h-8 w-8 text-yellow-600" />
+                <CurrencyDollarIcon className="h-8 w-8 text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Monthly Revenue</p>
-                <p className="text-2xl font-semibold text-gray-900">${stats.monthly_revenue}</p>
+                <p className="text-sm font-medium text-green-800">Total Revenue</p>
+                <p className="text-2xl font-semibold text-green-900">
+                  ${typeof stats.monthly_revenue === 'number' ? stats.monthly_revenue.toFixed(2) : Number(stats.monthly_revenue || 0).toFixed(2)}
+                </p>
               </div>
             </div>
           </div>
@@ -282,6 +285,19 @@ export default function DashboardPage() {
               <CalendarIcon className="h-8 w-8 text-gray-600" />
             </div>
           </div>
+
+          <div 
+            onClick={() => router.push('/dashboard/reports')}
+            className="card p-6 hover:shadow-lg transition-shadow cursor-pointer"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Financial Reports</h3>
+                <p className="text-sm text-gray-500">Revenue analytics and export</p>
+              </div>
+              <ChartBarIcon className="h-8 w-8 text-primary-600" />
+            </div>
+          </div>
         </div>
 
         {/* Occupancy Rate */}
@@ -297,7 +313,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <span className="ml-4 text-sm font-medium text-gray-900">
-              {stats.occupancy_rate.toFixed(1)}%
+              {Number(stats.occupancy_rate || 0).toFixed(1)}%
             </span>
           </div>
         </div>

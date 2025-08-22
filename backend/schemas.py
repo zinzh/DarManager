@@ -327,6 +327,33 @@ class DashboardStats(BaseModel):
     occupancy_rate: float
     recent_bookings: List[Booking]
 
+# Revenue and Financial schemas
+class RevenueStats(BaseModel):
+    total_revenue: Decimal
+    period: str
+    breakdown: Optional[dict] = None
+    
+class PropertyRevenue(BaseModel):
+    property_id: UUID4
+    property_name: str
+    total_revenue: Decimal
+    bookings_count: int
+    
+class GuestRevenue(BaseModel):
+    guest_id: UUID4
+    guest_name: str
+    total_spent: Decimal
+    bookings_count: int
+
+class FinancialReport(BaseModel):
+    start_date: date
+    end_date: date
+    total_revenue: Decimal
+    properties: List[PropertyRevenue]
+    payment_methods_breakdown: dict
+    booking_sources_breakdown: dict
+    daily_revenue: List[dict]
+
 # Response schemas
 class MessageResponse(BaseModel):
     message: str

@@ -214,7 +214,7 @@ export default function PropertiesPage() {
                     
                     {property.price_per_night && (
                       <div className="flex items-center text-sm font-semibold text-green-600">
-                        <span>${property.price_per_night.toFixed(2)}/night</span>
+                        <span>${Number(property.price_per_night || 0).toFixed(2)}/night</span>
                       </div>
                     )}
                     
