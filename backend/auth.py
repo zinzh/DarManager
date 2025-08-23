@@ -17,8 +17,8 @@ from models import User, UserRole
 # Security configuration
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your_jwt_secret_key_change_in_production")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-REFRESH_TOKEN_EXPIRE_DAYS = 7
+ACCESS_TOKEN_EXPIRE_MINUTES = 43200  # 30 days (30 * 24 * 60 minutes)
+REFRESH_TOKEN_EXPIRE_DAYS = 60  # 60 days for refresh token
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
