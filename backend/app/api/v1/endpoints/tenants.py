@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import User, Tenant, Property, Guest
+from models import User, Tenant, Property, Guest, Booking
 from schemas import (
     Tenant as TenantSchema, TenantCreate, TenantUpdate,
     User as UserSchema, UserCreate
@@ -120,12 +120,17 @@ async def delete_tenant(
     if not db_tenant:
         raise NotFoundError("Tenant", tenant_id)
     
-    # Get count of related data that will be deleted
-    user_count = db.query(User).filter(User.tenant_id == tenant_id).count()
-    property_count = db.query(Property).filter(Property.tenant_id == tenant_id).count()
-    guest_count = db.query(Guest).filter(Guest.tenant_id == tenant_id).count()
+    # Get count of related data that will be deleted (using raw SQL to avoid loading objects)
+    from sqlalchemy import text
     
-    db.delete(db_tenant)
+    # Count related data without loading into SQLAlchemy session
+    user_count = db.execute(text("SELECT COUNT(*) FROM users WHERE tenant_id = :tenant_id"), {"tenant_id": tenant_id}).scalar()
+    property_count = db.execute(text("SELECT COUNT(*) FROM properties WHERE tenant_id = :tenant_id"), {"tenant_id": tenant_id}).scalar()
+    guest_count = db.execute(text("SELECT COUNT(*) FROM guests WHERE tenant_id = :tenant_id"), {"tenant_id": tenant_id}).scalar()
+    booking_count = db.execute(text("SELECT COUNT(*) FROM bookings b JOIN properties p ON b.property_id = p.id WHERE p.tenant_id = :tenant_id"), {"tenant_id": tenant_id}).scalar()
+    
+    # Delete the tenant using raw SQL to bypass SQLAlchemy relationship management
+    db.execute(text("DELETE FROM tenants WHERE id = :tenant_id"), {"tenant_id": tenant_id})
     db.commit()
     
     return {
@@ -133,7 +138,8 @@ async def delete_tenant(
         "deleted_data": {
             "users": user_count,
             "properties": property_count,
-            "guests": guest_count
+            "guests": guest_count,
+            "bookings": booking_count
         }
     }
 

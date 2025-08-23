@@ -45,26 +45,9 @@ export default function LoginPage() {
           router.push('/admin');
           return;
         }
-        
-        // Check if this is a new tenant (no properties yet)
-        const propertiesResponse = await fetch('/api/properties', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          },
-        });
-        
-        if (propertiesResponse.ok) {
-          const properties = await propertiesResponse.json();
-          
-          // If no properties, redirect to onboarding
-          if (properties.length === 0) {
-            router.push('/onboarding');
-            return;
-          }
-        }
       }
       
-      // Default redirect to dashboard
+      // All regular users go to dashboard
       router.push('/dashboard');
     }
   };

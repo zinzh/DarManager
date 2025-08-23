@@ -39,7 +39,7 @@ export default function TenantDetailPage() {
 
   const loadTenant = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await fetch(`/api/admin/tenants/${tenantId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -74,7 +74,7 @@ export default function TenantDetailPage() {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await fetch(`/api/admin/tenants/${tenantId}`, {
         method: 'PUT',
         headers: {

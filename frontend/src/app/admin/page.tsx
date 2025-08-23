@@ -27,7 +27,7 @@ export default function SuperAdminDashboard() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('access_token');
         if (!token) {
           router.push('/login');
           return;
@@ -62,7 +62,7 @@ export default function SuperAdminDashboard() {
 
   const loadTenants = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await fetch('/api/admin/tenants', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -88,7 +88,7 @@ export default function SuperAdminDashboard() {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await fetch(`/api/admin/tenants/${tenantId}`, {
         method: 'DELETE',
         headers: {
@@ -336,7 +336,7 @@ function CreateTenantModal({ onClose, onSuccess }: { onClose: () => void; onSucc
     setError('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await fetch('/api/admin/tenants', {
         method: 'POST',
         headers: {
@@ -375,7 +375,7 @@ function CreateTenantModal({ onClose, onSuccess }: { onClose: () => void; onSucc
     setGeneratedPassword(password);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('access_token');
       const response = await fetch(`/api/admin/tenants/${createdTenant.id}/admin-user`, {
         method: 'POST',
         headers: {
