@@ -20,6 +20,9 @@ RUN chown -R nextjs:nodejs /app
 # Create .next directory with proper permissions
 RUN mkdir -p /app/.next && chown -R nextjs:nodejs /app/.next
 
+# Ensure public directory has proper permissions for PWA files
+RUN mkdir -p /app/public && chown -R nextjs:nodejs /app/public && chmod -R 755 /app/public
+
 USER nextjs
 
 # Expose port
