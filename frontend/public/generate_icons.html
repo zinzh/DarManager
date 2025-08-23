@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+</head>
+<body>
+    <h1>DarManager PWA Icon Generator</h1>
+    <p>This page helps generate PWA icons. Right-click and save each canvas as PNG.</p>
+    
+    <div id="icons"></div>
+    
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        const container = document.getElementById('icons');
+        
+        sizes.forEach(size => {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Background
+            ctx.fillStyle = '#3B82F6';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Building icon (simplified)
+            ctx.fillStyle = 'white';
+            const scale = size / 512;
+            
+            // Building base
+            ctx.fillRect(176 * scale, 224 * scale, 160 * scale, 160 * scale);
+            
+            // Roof triangle
+            ctx.beginPath();
+            ctx.moveTo(160 * scale, 224 * scale);
+            ctx.lineTo(256 * scale, 160 * scale);
+            ctx.lineTo(352 * scale, 224 * scale);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Text "DM"
+            ctx.font = `bold ${72 * scale}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('DM', size / 2, size * 0.82);
+            
+            // Add to page
+            const div = document.createElement('div');
+            div.style.margin = '10px';
+            div.style.display = 'inline-block';
+            
+            const label = document.createElement('p');
+            label.textContent = `icon-${size}x${size}.png`;
+            
+            div.appendChild(label);
+            div.appendChild(canvas);
+            container.appendChild(div);
+            
+            // Convert to PNG and create download link
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `icon-${size}x${size}.png`;
+                a.textContent = 'Download';
+                a.style.display = 'block';
+                div.appendChild(a);
+            });
+        });
+    </script>
+</body>
+</html>

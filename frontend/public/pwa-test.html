@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Installation Test</title>
+    <link rel="manifest" href="/manifest.json">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>PWA Installation Test</h1>
+    <div id="results"></div>
+    <button onclick="testInstall()">Test Install Prompt</button>
+    
+    <script>
+        async function checkPWASupport() {
+            const results = document.getElementById('results');
+            let html = '';
+            
+            // Check service worker support
+            if ('serviceWorker' in navigator) {
+                html += '<div class="status success">✅ Service Worker supported</div>';
+                
+                try {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        html += '<div class="status success">✅ Service Worker registered</div>';
+                    } else {
+                        html += '<div class="status warning">⚠️ Service Worker not registered (normal in dev mode)</div>';
+                    }
+                } catch (e) {
+                    html += '<div class="status error">❌ Service Worker registration failed: ' + e.message + '</div>';
+                }
+            } else {
+                html += '<div class="status error">❌ Service Worker not supported</div>';
+            }
+            
+            // Check manifest
+            try {
+                const response = await fetch('/manifest.json');
+                if (response.ok) {
+                    const manifest = await response.json();
+                    html += '<div class="status success">✅ Manifest accessible</div>';
+                    html += '<pre>Manifest: ' + JSON.stringify(manifest, null, 2) + '</pre>';
+                } else {
+                    html += '<div class="status error">❌ Manifest not accessible</div>';
+                }
+            } catch (e) {
+                html += '<div class="status error">❌ Manifest error: ' + e.message + '</div>';
+            }
+            
+            // Check install prompt support
+            window.addEventListener('beforeinstallprompt', (e) => {
+                html += '<div class="status success">✅ Install prompt available</div>';
+                window.deferredPrompt = e;
+                results.innerHTML = html;
+            });
+            
+            // Check if already installed
+            if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+                html += '<div class="status success">✅ App is running in standalone mode (installed)</div>';
+            } else {
+                html += '<div class="status warning">⚠️ App is running in browser mode</div>';
+            }
+            
+            results.innerHTML = html;
+        }
+        
+        function testInstall() {
+            if (window.deferredPrompt) {
+                window.deferredPrompt.prompt();
+                window.deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    } else {
+                        console.log('User dismissed the install prompt');
+                    }
+                    window.deferredPrompt = null;
+                });
+            } else {
+                alert('Install prompt not available. Try "Add to Home Screen" from browser menu.');
+            }
+        }
+        
+        // Run checks when page loads
+        checkPWASupport();
+    </script>
+</body>
+</html>
