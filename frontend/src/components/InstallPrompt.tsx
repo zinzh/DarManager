@@ -18,17 +18,24 @@ export default function InstallPrompt() {
 
   useEffect(() => {
     setIsClient(true);
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setShowInstallPrompt(true);
-    };
+    
+    // Only add event listener if not in Safari iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    
+    if (!isIOS && !isSafari) {
+      const handler = (e: Event) => {
+        e.preventDefault();
+        setDeferredPrompt(e as BeforeInstallPromptEvent);
+        setShowInstallPrompt(true);
+      };
 
-    window.addEventListener('beforeinstallprompt', handler);
+      window.addEventListener('beforeinstallprompt', handler);
 
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handler);
-    };
+      return () => {
+        window.removeEventListener('beforeinstallprompt', handler);
+      };
+    }
   }, []);
 
   const handleInstallClick = async () => {

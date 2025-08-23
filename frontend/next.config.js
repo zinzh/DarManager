@@ -1,21 +1,12 @@
 const withPWA = require('next-pwa')({
   dest: 'public',
-  register: true,
+  register: false, // Disable automatic registration
   skipWaiting: true,
   disable: process.env.DISABLE_PWA === 'true',
-  buildExcludes: [/middleware-manifest.json$/],
-  runtimeCaching: [
-    {
-      urlPattern: /^https?.*/,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'offlineCache',
-        expiration: {
-          maxEntries: 200,
-        },
-      },
-    },
-  ],
+  customWorkerDir: 'worker',
+  fallbacks: {
+    document: '/offline.html',
+  },
 });
 
 /** @type {import('next').NextConfig} */

@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { TenantProvider } from '@/contexts/TenantContext';
-import InstallPrompt from '@/components/InstallPrompt';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -53,7 +52,6 @@ export default function RootLayout({
         <div id="root" className="h-full">
           <TenantProvider>
             {children}
-            <InstallPrompt />
           </TenantProvider>
         </div>
       </body>
