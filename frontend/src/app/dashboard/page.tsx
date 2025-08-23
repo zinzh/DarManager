@@ -319,7 +319,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Development Status */}
-        <div className="card p-6">
+        {/* <div className="card p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">System Status</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -339,7 +339,7 @@ export default function DashboardPage() {
               <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">Planned</span>
             </div>
           </div>
-        </div>
+        </div> */}
       </main>
     </div>
   );
