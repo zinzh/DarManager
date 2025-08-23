@@ -10,20 +10,8 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
-
-# Change ownership of the /app directory to the nextjs user
-RUN chown -R nextjs:nodejs /app
-
-# Create .next directory with proper permissions
-RUN mkdir -p /app/.next && chown -R nextjs:nodejs /app/.next
-
-# Ensure public directory has proper permissions for PWA files
-RUN mkdir -p /app/public && chown -R nextjs:nodejs /app/public && chmod -R 755 /app/public
-
-USER nextjs
+# For development, run as root to avoid permission issues with PWA files
+# In production, you should use proper user permissions
 
 # Expose port
 EXPOSE 3000
