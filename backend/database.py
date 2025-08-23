@@ -3,10 +3,15 @@ Database configuration and connection management for DarManager.
 """
 
 import os
+import time
+import logging
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from sqlalchemy.exc import OperationalError
+
+logger = logging.getLogger(__name__)
 
 # Database URL from environment variable
 DATABASE_URL = os.getenv(
@@ -43,13 +48,37 @@ def get_db():
     finally:
         db.close()
 
+def wait_for_database(max_retries: int = 30, retry_interval: int = 2):
+    """
+    Wait for database to be ready with retry logic.
+    """
+    retries = 0
+    while retries < max_retries:
+        try:
+            # Try to connect to database
+            connection = engine.connect()
+            connection.close()
+            logger.info("✅ Database connection successful")
+            return True
+        except OperationalError as e:
+            retries += 1
+            logger.warning(f"⏳ Database not ready (attempt {retries}/{max_retries}): {str(e)}")
+            if retries >= max_retries:
+                logger.error("❌ Database connection failed after all retries")
+                raise
+            time.sleep(retry_interval)
+    return False
+
 def init_database():
     """
     Initialize database tables (if needed).
     """
+    # Wait for database to be ready first
+    wait_for_database()
+    
     # Import models to register them
     import models
     
     # Create tables if they don't exist
     Base.metadata.create_all(bind=engine)
-    print("Database tables initialized.")
+    print("✅ Database tables initialized.")

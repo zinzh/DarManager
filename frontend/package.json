@@ -20,7 +20,11 @@
     "@tailwindcss/forms": "^0.5.7",
     "clsx": "^2.0.0",
     "lucide-react": "^0.294.0",
-    "tailwind-merge": "^2.0.0"
+    "tailwind-merge": "^2.0.0",
+    "zustand": "^4.4.7",
+    "react-hook-form": "^7.48.2",
+    "zod": "^3.22.4",
+    "@hookform/resolvers": "^3.3.2"
   },
   "devDependencies": {
     "@types/node": "20.10.4",
