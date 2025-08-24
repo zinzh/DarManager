@@ -5,7 +5,7 @@
 
 import { create } from 'zustand';
 import { DashboardStats } from '@/types';
-import { apiClient } from '@/lib/api-client';
+import { apiClient } from '@/lib/api/client';
 
 interface DashboardState {
   stats: DashboardStats | null;
