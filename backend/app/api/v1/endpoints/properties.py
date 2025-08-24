@@ -7,13 +7,13 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from database import get_db
-from models import Property, User, UserRole
-from schemas import Property as PropertySchema, PropertyCreate
+from app.core.database import get_db
+from app.models import Property, User, UserRole
+from app.schemas import Property as PropertySchema, PropertyCreate
 from app.core.security import get_current_user
 from app.core.exceptions import NotFoundError, ForbiddenError
 from app.services.property_service import PropertyService
-from tenant import get_user_tenant_id, validate_tenant_access
+from app.core.tenant import get_user_tenant_id, validate_tenant_access
 
 router = APIRouter(prefix="/properties", tags=["Properties"])
 

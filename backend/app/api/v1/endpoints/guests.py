@@ -7,9 +7,9 @@ from typing import List
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from database import get_db
-from models import User, Guest
-from schemas import Guest as GuestSchema, GuestCreate, GuestUpdate
+from app.core.database import get_db
+from app.models import User, Guest
+from app.schemas import Guest as GuestSchema, GuestCreate, GuestUpdate
 from app.core.security import get_current_user
 from app.core.exceptions import NotFoundError
 from app.services.guest_service import GuestService

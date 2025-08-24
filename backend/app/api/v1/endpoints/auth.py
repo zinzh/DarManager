@@ -6,12 +6,12 @@ Handles user login, registration, and token management.
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 
-from database import get_db
-from models import User, UserRole
-from schemas import UserCreate, UserLogin, Token, User as UserSchema
+from app.core.database import get_db
+from app.models import User, UserRole
+from app.schemas import UserCreate, UserLogin, Token, User as UserSchema
 from app.core.security import SecurityService, get_current_user, get_current_admin
 from app.core.exceptions import UnauthorizedError, ConflictError
-from tenant import get_tenant_from_subdomain
+from app.core.tenant import get_tenant_from_subdomain
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -51,7 +51,7 @@ async def login(
         else:
             # Regular users should be redirected to their tenant subdomain
             if user.tenant_id:
-                from models import Tenant
+                from app.models import Tenant
                 user_tenant = db.query(Tenant).filter(Tenant.id == user.tenant_id).first()
                 if user_tenant:
                     raise HTTPException(

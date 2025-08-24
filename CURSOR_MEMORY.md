@@ -438,6 +438,144 @@ frontend/src/
 - All authentication and multi-tenant features preserved
 - Docker Compose configuration remains the same
 
+## **🚀 PRODUCTION DEPLOYMENT GUIDE**
+
+### **Development vs Production Differences**:
+
+#### **Why Development Works But Production Fails**:
+1. **TypeScript Compilation**:
+   - **Dev Mode (`npm run dev`)**: Uses transpile-only mode, skips strict type checking for fast hot-reload
+   - **Production (`npm run build`)**: Full TypeScript validation, enforces all type constraints
+   - **Common Issues**: Generic type constraints (e.g., `T extends FieldValues`), strict null checks
+
+2. **Module Resolution**:
+   - **Dev Mode**: Cached module resolution, may use existing node_modules
+   - **Production**: Fresh build, only uses dependencies in package.json
+   - **Common Issues**: Missing dependencies, incorrect import paths
+
+3. **Environment Variables**:
+   - **Dev Mode**: Uses `.env.local`, `NODE_ENV=development`
+   - **Production**: Uses environment-specific variables, `NODE_ENV=production`
+   - **Common Issues**: Missing env vars, PWA enabled in dev causing warnings
+
+4. **Build Optimization**:
+   - **Dev Mode**: Unoptimized bundles, source maps, fast refresh
+   - **Production**: Minified code, tree shaking, standalone output
+   - **Common Issues**: Dead code elimination exposing unused imports
+
+### **Docker Configuration**:
+
+#### **Development Setup** (`docker-compose.yml`):
+```yaml
+frontend:
+  build:
+    dockerfile: Dockerfile.dev
+  environment:
+    - NODE_ENV=development
+  volumes:
+    - ./frontend:/app  # Hot reload enabled
+```
+
+#### **Production Setup** (`docker-compose.prod.yml`):
+```yaml
+frontend:
+  build:
+    dockerfile: Dockerfile  # Multi-stage optimized build
+  environment:
+    - NODE_ENV=production
+  # No volumes - uses built image
+```
+
+### **Deployment Commands**:
+
+#### **Local Development**:
+```bash
+docker-compose up --build
+# or
+docker-compose -f docker-compose.yml up
+```
+
+#### **Production on EC2**:
+```bash
+# Build and deploy production
+docker-compose -f docker-compose.prod.yml build --no-cache
+docker-compose -f docker-compose.prod.yml up -d
+
+# View logs
+docker-compose -f docker-compose.prod.yml logs -f frontend
+
+# Rebuild specific service
+docker-compose -f docker-compose.prod.yml build --no-cache frontend
+docker-compose -f docker-compose.prod.yml up -d frontend
+```
+
+### **Common Production Build Fixes**:
+
+1. **Missing Dependencies**:
+   - Always add new packages to package.json
+   - Run `npm install` locally to verify
+   - Rebuild Docker image with `--no-cache`
+
+2. **TypeScript Errors**:
+   - Test with `npm run build` locally before deploying
+   - Fix type constraints (e.g., `extends FieldValues`)
+   - Use proper error state types: `Partial<Record<keyof FormData, string>>`
+
+3. **Import Path Issues**:
+   - Check .gitignore for excluded directories (e.g., `lib/`)
+   - Verify file exists in repository: `git ls-files src/`
+   - Use consistent import paths: `@/lib/api-client`
+
+4. **PWA/Service Worker Issues**:
+   - Disable PWA in development: `disable: process.env.NODE_ENV === 'development'`
+   - Generate all required icons (favicon.ico, icon-144x144.png, etc.)
+   - Configure next-pwa properly for production
+
+### **Production Dockerfile** (Multi-stage optimized):
+```dockerfile
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+FROM node:18-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV production
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+EXPOSE 3000
+CMD ["node", "server.js"]
+```
+
+### **Key Production Configurations**:
+
+1. **next.config.js**:
+   - Add `output: 'standalone'` for optimized builds
+   - Configure PWA for production only
+   - Set proper API rewrites
+
+2. **package.json Dependencies**:
+   - Always include runtime dependencies
+   - Use exact versions for production stability
+   - Common missing: react-hook-form, zustand, zod
+
+3. **Environment Variables**:
+   - `NODE_ENV=production`
+   - `NEXT_PUBLIC_API_URL` (without trailing slash)
+   - Database credentials from secrets
+
+### **Deployment Checklist**:
+- [ ] Run `npm run build` locally to catch TypeScript errors
+- [ ] Verify all dependencies in package.json
+- [ ] Check .gitignore doesn't exclude needed files
+- [ ] Test with production Dockerfile locally
+- [ ] Set correct environment variables
+- [ ] Use production docker-compose file
+- [ ] Monitor logs after deployment
+
 **NEXT SESSION GOALS**:
 1. Payment confirmation system integration  
 2. WhatsApp integration for guest communication

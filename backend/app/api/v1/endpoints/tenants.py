@@ -7,9 +7,9 @@ from typing import List
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
-from database import get_db
-from models import User, Tenant, Property, Guest, Booking
-from schemas import (
+from app.core.database import get_db
+from app.models import User, Tenant, Property, Guest, Booking
+from app.schemas import (
     Tenant as TenantSchema, TenantCreate, TenantUpdate,
     User as UserSchema, UserCreate
 )
@@ -152,7 +152,7 @@ async def create_tenant_admin(
     current_user: User = Depends(require_super_admin)
 ):
     """Create an admin user for a specific tenant (Super admin only)."""
-    from models import UserRole
+    from app.models import UserRole
     
     # Verify tenant exists
     tenant = db.query(Tenant).filter(Tenant.id == tenant_id).first()
@@ -188,7 +188,7 @@ async def get_current_tenant_info(
     db: Session = Depends(get_db)
 ):
     """Get current tenant information (no auth required for tenant detection)."""
-    from tenant import get_tenant_from_subdomain
+    from app.core.tenant import get_tenant_from_subdomain
     
     tenant = await get_tenant_from_subdomain(request, db)
     if not tenant:

@@ -8,9 +8,9 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from datetime import date
 
-from database import get_db
-from models import User, Room, Booking
-from schemas import Room as RoomSchema, RoomCreate, RoomUpdate, RoomWithStatus
+from app.core.database import get_db
+from app.models import User, Room, Booking
+from app.schemas import Room as RoomSchema, RoomCreate, RoomUpdate, RoomWithStatus
 from app.core.security import get_current_user
 from app.core.exceptions import NotFoundError, DependencyConflictError
 

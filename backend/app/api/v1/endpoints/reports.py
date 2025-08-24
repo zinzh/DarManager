@@ -9,9 +9,9 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from database import get_db
-from models import User, Booking, Property
-from schemas import GuestRevenue, PropertyRevenue, FinancialReport
+from app.core.database import get_db
+from app.models import User, Booking, Property
+from app.schemas import GuestRevenue, PropertyRevenue, FinancialReport
 from app.core.security import get_current_user
 from app.core.exceptions import NotFoundError
 from app.services.reports_service import ReportsService

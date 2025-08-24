@@ -7,9 +7,9 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from models import Property, User, UserRole, Room, Booking
-from schemas import PropertyCreate
-from tenant import get_user_tenant_id
+from app.models import Property, User, UserRole, Room, Booking
+from app.schemas import PropertyCreate
+from app.core.tenant import get_user_tenant_id
 from app.core.exceptions import DependencyConflictError
 
 

@@ -8,9 +8,9 @@ from datetime import date
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from models import Booking, User, UserRole, Property, Guest
-from schemas import BookingCreate, BookingUpdate
-from tenant import get_user_tenant_id, validate_tenant_access
+from app.models import Booking, User, UserRole, Property, Guest
+from app.schemas import BookingCreate, BookingUpdate
+from app.core.tenant import get_user_tenant_id, validate_tenant_access
 from app.core.exceptions import NotFoundError, ConflictError, ValidationError, DependencyConflictError
 
 

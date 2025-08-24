@@ -18,7 +18,7 @@ from app.core.exceptions import (
     general_exception_handler
 )
 from app.api.v1.api import api_router
-from database import init_database
+from app.core.database import init_database
 
 
 def create_application() -> FastAPI:
@@ -97,8 +97,8 @@ async def startup_event():
         init_database()
         
         # Check if super admin exists
-        from database import get_db
-        from models import User, UserRole
+        from app.core.database import get_db
+        from app.models import User, UserRole
         
         db = next(get_db())
         super_admin_exists = db.query(User).filter(User.role == UserRole.SUPER_ADMIN).first()

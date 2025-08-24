@@ -12,8 +12,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from database import get_db
-from models import User, UserRole
+from app.core.database import get_db
+from app.models import User, UserRole
 
 
 # Password hashing context

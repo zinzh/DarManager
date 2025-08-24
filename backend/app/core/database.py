@@ -77,7 +77,7 @@ def init_database():
     wait_for_database()
     
     # Import models to register them
-    import models
+    import app.models
     
     # Create tables if they don't exist
     Base.metadata.create_all(bind=engine)

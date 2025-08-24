@@ -7,8 +7,8 @@ from fastapi import Request, HTTPException, Depends
 from sqlalchemy.orm import Session
 import threading
 
-from models import Tenant, User
-from database import get_db
+from app.models import Tenant, User
+from app.core.database import get_db
 
 # Thread-local storage for tenant context
 _tenant_context = threading.local()
@@ -100,7 +100,7 @@ async def require_tenant(
 
 def get_user_tenant_id(user: User) -> Optional[str]:
     """Get tenant ID for a user. Super admins have no tenant."""
-    from models import UserRole
+    from app.models import UserRole
     
     if user.role == UserRole.SUPER_ADMIN:
         return None  # Super admin can access all tenants
@@ -109,7 +109,7 @@ def get_user_tenant_id(user: User) -> Optional[str]:
 
 def validate_tenant_access(user: User, tenant_id: Optional[str]) -> bool:
     """Validate that a user can access resources for a given tenant."""
-    from models import UserRole
+    from app.models import UserRole
     
     # Super admin can access everything
     if user.role == UserRole.SUPER_ADMIN:

@@ -7,9 +7,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from database import get_db
-from models import User, UserRole, Property, Room, Guest, Booking
-from schemas import DashboardStats
+from app.core.database import get_db
+from app.models import User, UserRole, Property, Room, Guest, Booking
+from app.schemas import DashboardStats
 from app.core.security import get_current_user
 from app.services.dashboard_service import DashboardService
 

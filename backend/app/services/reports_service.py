@@ -8,9 +8,9 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from models import User, UserRole, Guest, Property, Booking
-from schemas import GuestRevenue, PropertyRevenue, FinancialReport
-from tenant import get_user_tenant_id, validate_tenant_access
+from app.models import User, UserRole, Guest, Property, Booking
+from app.schemas import GuestRevenue, PropertyRevenue, FinancialReport
+from app.core.tenant import get_user_tenant_id, validate_tenant_access
 
 
 class ReportsService:

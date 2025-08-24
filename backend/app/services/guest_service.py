@@ -7,9 +7,9 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
-from models import Guest, User, UserRole, Booking
-from schemas import GuestCreate, GuestUpdate
-from tenant import get_user_tenant_id, validate_tenant_access
+from app.models import Guest, User, UserRole, Booking
+from app.schemas import GuestCreate, GuestUpdate
+from app.core.tenant import get_user_tenant_id, validate_tenant_access
 from app.core.exceptions import DependencyConflictError
 
 

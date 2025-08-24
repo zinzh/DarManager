@@ -7,9 +7,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from fastapi import HTTPException, status
 
-from models import User, UserRole, Property, Room, Guest, Booking
-from schemas import DashboardStats
-from tenant import get_user_tenant_id
+from app.models import User, UserRole, Property, Room, Guest, Booking
+from app.schemas import DashboardStats
+from app.core.tenant import get_user_tenant_id
 
 
 class DashboardService:
