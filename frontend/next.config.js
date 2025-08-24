@@ -2,8 +2,9 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: false, // Disable automatic registration
   skipWaiting: true,
-  disable: process.env.DISABLE_PWA === 'true',
+  disable: process.env.NODE_ENV === 'development', // Disable PWA in development
   customWorkerDir: 'worker',
+  buildExcludes: [/app-build-manifest\.json$/],
   fallbacks: {
     document: '/offline.html',
   },
@@ -13,6 +14,7 @@ const withPWA = require('next-pwa')({
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  output: 'standalone',
   
   // API configuration
   async rewrites() {
