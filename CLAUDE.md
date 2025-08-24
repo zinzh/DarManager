@@ -53,7 +53,10 @@ npm run lint
 # Install dependencies
 pip install -r requirements.txt
 
-# Run development server (inside container)
+# Run development server (modular version)
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Run development server (legacy version)
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -71,19 +74,36 @@ The system implements complete tenant isolation:
 - Super Admin role manages tenants from `/admin` dashboard
 - Tenant context is managed via `backend/tenant.py`
 
-### Key Backend Modules
-- `backend/main.py`: FastAPI application with all API endpoints
+### Production-Grade Backend Architecture (REFACTORED 2024)
+**Modular Service-Based Design:**
+- `backend/app/main.py`: Application factory with startup/shutdown hooks
+- `backend/app/core/config.py`: Pydantic Settings-based configuration
+- `backend/app/core/security.py`: Centralized authentication and authorization  
+- `backend/app/core/exceptions.py`: Standardized error handling with custom exceptions
+- `backend/app/services/`: Business logic layer (PropertyService, DashboardService, etc.)
+- `backend/app/api/v1/endpoints/`: Modular router files per feature
+- `backend/app/api/v1/api.py`: Main router aggregating all endpoints
 - `backend/models.py`: SQLAlchemy ORM models with tenant relationships
 - `backend/schemas.py`: Pydantic schemas for request/response validation
-- `backend/auth.py`: JWT authentication and authorization
-- `backend/database.py`: Database connection and session management
+- `backend/database.py`: Database connection with retry logic and health checks
 - `backend/tenant.py`: Multi-tenant context and middleware
 
-### Frontend Structure
+**Legacy (backup):**
+- `backend/main.py`: Original monolithic FastAPI application (kept for reference)
+
+### Production-Grade Frontend Architecture (REFACTORED 2024)
+**Centralized State & API Management:**
+- `frontend/src/lib/api-client.ts`: Centralized API client with error handling and auth
+- `frontend/src/stores/`: Zustand stores for state management (auth, properties, etc.)
+- `frontend/src/types/index.ts`: Comprehensive TypeScript definitions
+- `frontend/src/components/ui/`: Reusable UI components (Button, Input, Card, etc.)
+- `frontend/src/hooks/`: Custom hooks including form validation with Zod schemas
+
+**Page Structure:**
 - `frontend/src/app/`: Next.js app router pages
   - `page.tsx`: Public landing page
   - `login/`: Tenant-specific login
-  - `dashboard/`: Main authenticated area
+  - `dashboard/`: Main authenticated area  
   - `admin/`: Super admin dashboard
   - `onboarding/`: New tenant setup
 - `frontend/src/contexts/TenantContext.tsx`: Tenant state management
@@ -155,9 +175,23 @@ When modifying database schema:
 
 ## Critical Files to Review
 
-Before making changes, review:
+**Production Architecture (Current):**
+- `backend/app/core/config.py` - Application configuration and settings
+- `backend/app/core/security.py` - Authentication and authorization logic
+- `backend/app/services/` - Business logic layer (never modify models directly)
+- `backend/app/api/v1/endpoints/` - API endpoint routers
+- `frontend/src/lib/api-client.ts` - Centralized API communication
+- `frontend/src/stores/` - Application state management
+- `frontend/src/types/index.ts` - TypeScript type definitions
+
+**Core System Files:**
 - `backend/models.py` - Database schema and relationships
 - `backend/tenant.py` - Multi-tenant logic
-- `frontend/src/contexts/TenantContext.tsx` - Frontend tenant handling
+- `frontend/src/contexts/TenantContext.tsx` - Frontend tenant handling  
 - `database/init_multitenant.sql` - Current database schema
 - `CURSOR_MEMORY.md` - Detailed development history and decisions
+
+## Important considerations
+
+When adding a new feature, especially when this feature requires changes in the database model, or any database table, keep in mind that the current data in the database is important and should not be corrupted after this change. for example null values that amy break something else when running after a new change with old data.
+So be careful, or update the values of newly created colums / update values of existing data to not crash the software after the new change.

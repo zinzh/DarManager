@@ -62,8 +62,8 @@ class Tenant(Base):
     
     # Relationships
     users = relationship("User", back_populates="tenant")
-    properties = relationship("Property", back_populates="tenant", cascade="all, delete-orphan")
-    guests = relationship("Guest", back_populates="tenant", cascade="all, delete-orphan")
+    properties = relationship("Property", back_populates="tenant")
+    guests = relationship("Guest", back_populates="tenant")
 class User(Base):
     __tablename__ = "users"
     
@@ -100,7 +100,7 @@ class Property(Base):
     
     # Relationships
     tenant = relationship("Tenant", back_populates="properties")
-    rooms = relationship("Room", back_populates="property", cascade="all, delete-orphan")
+    rooms = relationship("Room", back_populates="property")
     bookings = relationship("Booking", back_populates="property")
 
 class Room(Base):

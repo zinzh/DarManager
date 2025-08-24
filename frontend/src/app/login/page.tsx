@@ -1,199 +1,121 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { HomeIcon, EyeIcon, EyeSlashIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
 import { useTenant } from '@/contexts/TenantContext';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useFormValidation, loginSchema, LoginFormData } from '@/hooks/useFormValidation';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 
 export default function LoginPage() {
   const router = useRouter();
   const { tenant, subdomain, isLoading: tenantLoading } = useTenant();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const { login, isLoading, error, clearError } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useFormValidation<LoginFormData>({
+    schema: loginSchema,
+  });
 
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
+  const onSubmit = async (data: LoginFormData) => {
+    clearError();
+    
+    const success = await login(data);
+    
+    if (success) {
+      // Check user role and redirect accordingly
+      const response = await fetch('/api/auth/me', {
         headers: {
-          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
         },
-        body: JSON.stringify(formData),
       });
-
+      
       if (response.ok) {
-        const data = await response.json();
-        // Store the token in localStorage (in production, consider more secure storage)
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('refresh_token', data.refresh_token);
+        const user = await response.json();
         
-        // Check user info for role-based redirects
-        try {
-          const userResponse = await fetch('/api/auth/me', {
-            headers: {
-              'Authorization': `Bearer ${data.access_token}`,
-            },
-          });
-          
-          if (userResponse.ok) {
-            const user = await userResponse.json();
-            
-            // Super admin goes to admin dashboard
-            if (user.role === 'super_admin') {
-              router.push('/admin');
-              return;
-            }
-            
-            // Check if this is a new tenant (no properties yet)
-            const propertiesResponse = await fetch('/api/properties', {
-              headers: {
-                'Authorization': `Bearer ${data.access_token}`,
-              },
-            });
-            
-            if (propertiesResponse.ok) {
-              const properties = await propertiesResponse.json();
-              
-              // If no properties, redirect to onboarding
-              if (properties.length === 0) {
-                router.push('/onboarding');
-                return;
-              }
-            }
-          }
-        } catch (err) {
-          console.error('Error checking user info:', err);
+        // Super admin goes to admin dashboard
+        if (user.role === 'super_admin') {
+          router.push('/admin');
+          return;
         }
-        
-        // Default redirect to dashboard
-        router.push('/dashboard');
-      } else {
-        const errorData = await response.json();
-        setError(errorData.detail || 'Login failed');
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      setError('Network error. Please try again.');
-    } finally {
-      setIsLoading(false);
+      
+      // All regular users go to dashboard
+      router.push('/dashboard');
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  if (tenantLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
-          <HomeIcon className="h-12 w-12 text-primary-600" />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <HomeIcon className="mx-auto h-12 w-12 text-blue-600" />
+          <h2 className="mt-6 text-3xl font-bold text-gray-900">
+            {tenant ? `Welcome to ${tenant.name}` : 'Welcome to DarManager'}
+          </h2>
+          {subdomain && (
+            <p className="mt-2 text-sm text-gray-600">
+              Signing in to {subdomain}.darmanager.net
+            </p>
+          )}
         </div>
-        <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-          Sign in to DarManager
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Guesthouse Management System for Lebanon
-        </p>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="card px-4 py-8 sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
-                {error}
-              </div>
-            )}
-
-            {tenant && (
-              <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-md text-sm">
-                <div className="flex items-start">
-                  <InformationCircleIcon className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Tenant: {tenant.name}</p>
-                    <p className="text-blue-600">You are logging into {tenant.name}'s DarManager instance.</p>
+        <Card>
+          <CardHeader>
+            <CardTitle>Sign in to your account</CardTitle>
+          </CardHeader>
+          
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {error && (
+                <div className="rounded-md bg-red-50 p-4">
+                  <div className="flex">
+                    <InformationCircleIcon className="h-5 w-5 text-red-400" />
+                    <div className="ml-3">
+                      <p className="text-sm text-red-800">{error}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {subdomain && !tenant && (
-              <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-md text-sm">
-                <div className="flex items-start">
-                  <InformationCircleIcon className="h-5 w-5 text-yellow-600 mt-0.5 mr-2 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Subdomain: {subdomain}</p>
-                    <p className="text-yellow-600">This tenant subdomain was not found or is inactive.</p>
-                  </div>
-                </div>
-              </div>
-            )}
+              <Input
+                {...register('email')}
+                type="email"
+                label="Email address"
+                placeholder="Enter your email"
+                error={errors.email?.message}
+                required
+              />
 
-            {!subdomain && (
-              <div className="bg-gray-50 border border-gray-200 text-gray-700 px-4 py-3 rounded-md text-sm">
-                <div className="flex items-start">
-                  <InformationCircleIcon className="h-5 w-5 text-gray-500 mt-0.5 mr-2 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Platform Access</p>
-                    <p className="text-gray-600">Logging in from main platform (super admin access).</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="input-field"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  name="password"
+              <div className="relative">
+                <Input
+                  {...register('password')}
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  required
-                  className="input-field pr-10"
+                  label="Password"
                   placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={handleInputChange}
+                  error={errors.password?.message}
+                  required
                 />
                 <button
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   onClick={() => setShowPassword(!showPassword)}
+                  style={{ top: '24px' }}
                 >
                   {showPassword ? (
                     <EyeSlashIcon className="h-5 w-5 text-gray-400" />
@@ -202,28 +124,24 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
-            </div>
 
-            <div>
-              <button
+              <Button
                 type="submit"
-                disabled={isLoading}
-                className="w-full btn-primary justify-center"
+                variant="primary"
+                size="lg"
+                isLoading={isLoading || isSubmitting}
+                className="w-full"
               >
-                {isLoading ? 'Signing in...' : 'Sign in'}
-              </button>
-            </div>
-          </form>
+                {isLoading || isSubmitting ? 'Signing in...' : 'Sign in'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
-
-          <div className="mt-6 text-center">
-            <button 
-              onClick={() => router.push('/')}
-              className="text-sm text-primary-600 hover:text-primary-500"
-            >
-              ← Back to homepage
-            </button>
-          </div>
+        <div className="text-center">
+          <p className="text-sm text-gray-600">
+            Don't have access? Contact your administrator
+          </p>
         </div>
       </div>
     </div>
