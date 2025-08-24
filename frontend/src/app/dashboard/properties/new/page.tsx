@@ -35,10 +35,10 @@ export default function NewPropertyPage() {
     max_guests: 1
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<Partial<PropertyFormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof PropertyFormData, string>>>({});
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<PropertyFormData> = {};
+    const newErrors: Partial<Record<keyof PropertyFormData, string>> = {};
 
     if (!formData.name.trim()) {
       newErrors.name = 'Property name is required';

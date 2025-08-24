@@ -52,7 +52,7 @@ export default function EditRoomPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [errors, setErrors] = useState<Partial<RoomFormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof RoomFormData, string>>>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -114,7 +114,7 @@ export default function EditRoomPage() {
   }, [propertyId, roomId, router]);
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<RoomFormData> = {};
+    const newErrors: Partial<Record<keyof RoomFormData, string>> = {};
 
     if (!formData.name.trim()) {
       newErrors.name = 'Room name is required';

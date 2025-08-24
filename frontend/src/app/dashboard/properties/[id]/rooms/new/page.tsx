@@ -40,10 +40,10 @@ export default function NewRoomPage() {
     keybox_code: ''
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<Partial<RoomFormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof RoomFormData, string>>>({});
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<RoomFormData> = {};
+    const newErrors: Partial<Record<keyof RoomFormData, string>> = {};
 
     if (!formData.name.trim()) {
       newErrors.name = 'Room name is required';

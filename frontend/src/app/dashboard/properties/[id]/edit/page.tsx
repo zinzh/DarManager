@@ -39,7 +39,7 @@ export default function EditPropertyPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [errors, setErrors] = useState<Partial<PropertyFormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof PropertyFormData, string>>>({});
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -94,7 +94,7 @@ export default function EditPropertyPage() {
   }, [propertyId, router]);
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<PropertyFormData> = {};
+    const newErrors: Partial<Record<keyof PropertyFormData, string>> = {};
 
     if (!formData.name.trim()) {
       newErrors.name = 'Property name is required';

@@ -41,7 +41,7 @@ export default function EditGuestPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [errors, setErrors] = useState<Partial<GuestFormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof GuestFormData, string>>>({});
 
   useEffect(() => {
     const fetchGuest = async () => {
@@ -94,7 +94,7 @@ export default function EditGuestPage() {
   }, [guestId, router]);
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<GuestFormData> = {};
+    const newErrors: Partial<Record<keyof GuestFormData, string>> = {};
 
     if (!formData.first_name.trim()) {
       newErrors.first_name = 'First name is required';
