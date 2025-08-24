@@ -90,7 +90,7 @@ export default function EditBookingPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [errors, setErrors] = useState<Partial<BookingFormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof BookingFormData, string>>>({});
   const [calculatedAmount, setCalculatedAmount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -178,7 +178,7 @@ export default function EditBookingPage() {
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<BookingFormData> = {};
+    const newErrors: Partial<Record<keyof BookingFormData, string>> = {};
 
     if (!formData.property_id) {
       newErrors.property_id = 'Property is required';
