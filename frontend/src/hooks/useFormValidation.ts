@@ -3,15 +3,15 @@
  * Provides consistent form handling across the application.
  */
 
-import { useForm, UseFormProps, UseFormReturn } from 'react-hook-form';
+import { useForm, UseFormProps, UseFormReturn, FieldValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ZodSchema, ZodType } from 'zod';
 
-interface UseFormValidationProps<T> extends Omit<UseFormProps<T>, 'resolver'> {
+interface UseFormValidationProps<T extends FieldValues> extends Omit<UseFormProps<T>, 'resolver'> {
   schema: ZodSchema<T>;
 }
 
-export function useFormValidation<T extends Record<string, any>>(
+export function useFormValidation<T extends FieldValues>(
   props: UseFormValidationProps<T>
 ): UseFormReturn<T> {
   const { schema, ...formProps } = props;
