@@ -12,7 +12,8 @@ import {
   CheckIcon,
   ArrowRightIcon,
   PhoneIcon,
-  EnvelopeIcon
+  EnvelopeIcon,
+  MapPinIcon
 } from '@heroicons/react/24/outline';
 
 export default function LandingPage() {
@@ -64,8 +65,6 @@ export default function LandingPage() {
     }
   ];
 
-
-
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -87,14 +86,14 @@ export default function LandingPage() {
                   Client Login
                 </button>
                 <a
-                  href="mailto:contact@darmanager.com"
+                  href="mailto:info@darmanager.net"
                   className="hidden sm:inline text-gray-700 hover:text-blue-600 font-medium whitespace-nowrap"
                 >
                   Contact Sales
                 </a>
               </div>
               <a
-                href="mailto:demo@darmanager.com"
+                href="mailto:info@darmanager.net?subject=DarManager Demo Request"
                 className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg hover:bg-blue-700 font-medium text-xs sm:text-sm whitespace-nowrap"
               >
                 Request Demo
@@ -113,27 +112,27 @@ export default function LandingPage() {
               <span className="block text-blue-600">Made Simple</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              The complete property management solution for modern guesthouses and hotels. 
-              Manage bookings, guests, and revenue all in one place.
+              The complete property management solution for guesthouses of all sizes. 
+              From small family-run properties to large hospitality businesses.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
-                href="mailto:contact@darmanager.com?subject=DarManager Demo Request"
+                href="mailto:info@darmanager.net?subject=DarManager Demo Request"
                 className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 font-semibold text-lg flex items-center justify-center"
               >
                 Request Demo
                 <ArrowRightIcon className="ml-2 h-5 w-5" />
               </a>
               <a
-                href="mailto:contact@darmanager.com?subject=DarManager Information"
+                href="mailto:info@darmanager.net?subject=DarManager Information"
                 className="border border-gray-300 text-gray-700 px-8 py-4 rounded-lg hover:bg-gray-50 font-semibold text-lg"
               >
                 Contact Sales
               </a>
             </div>
-            <p className="text-sm text-gray-500 mt-4">
-              Enterprise solutions available • Trusted worldwide
-            </p>
+            {/* <p className="text-sm text-gray-500 mt-4">
+              Founded in 2025 • Based in Beirut, Lebanon
+            </p> */}
           </div>
         </div>
       </section>
@@ -177,7 +176,7 @@ export default function LandingPage() {
                   <CheckIcon className="h-6 w-6 text-green-600 mt-1 mr-3 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-gray-900">Multi-Channel Bookings</h3>
-                    <p className="text-gray-600">WhatsApp, Instagram, phone calls, and direct bookings</p>
+                    <p className="text-gray-600">Direct bookings, OTA integrations, and social media channels</p>
                   </div>
                 </div>
                 <div className="flex items-start">
@@ -190,15 +189,29 @@ export default function LandingPage() {
                 <div className="flex items-start">
                   <CheckIcon className="h-6 w-6 text-green-600 mt-1 mr-3 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold text-gray-900">Property-Level Management</h3>
-                    <p className="text-gray-600">Rent entire properties, not just individual rooms</p>
+                    <h3 className="font-semibold text-gray-900">Flexible Property Management</h3>
+                    <p className="text-gray-600">Rent entire properties or individual rooms as needed</p>
                   </div>
                 </div>
                 <div className="flex items-start">
                   <CheckIcon className="h-6 w-6 text-green-600 mt-1 mr-3 flex-shrink-0" />
                   <div>
-                    <h3 className="font-semibold text-gray-900">Multi-Language Support</h3>
-                    <p className="text-gray-600">Intuitive interface with comprehensive documentation</p>
+                    <h3 className="font-semibold text-gray-900">Your Brand, Your Domain</h3>
+                    <p className="text-gray-600">Get your own branded website: yourname.darmanager.net</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <CheckIcon className="h-6 w-6 text-green-600 mt-1 mr-3 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-gray-900">Mobile-First Design</h3>
+                    <p className="text-gray-600">Manage your properties from anywhere on any device</p>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <CheckIcon className="h-6 w-6 text-green-600 mt-1 mr-3 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-gray-900">24/7 Availability</h3>
+                    <p className="text-gray-600">Your booking system works around the clock with 24/7 customer support</p>
                   </div>
                 </div>
               </div>
@@ -207,10 +220,10 @@ export default function LandingPage() {
               <div className="text-center">
                 <h3 className="text-2xl font-bold text-gray-900 mb-4">Ready to Get Started?</h3>
                 <p className="text-gray-600 mb-6">
-                  Join property owners worldwide who trust DarManager for their business
+                  Join property owners who are transforming their hospitality business with DarManager
                 </p>
                 <a
-                  href="mailto:contact@darmanager.com?subject=DarManager Setup Request"
+                  href="mailto:info@darmanager.net?subject=DarManager Setup Request"
                   className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 font-semibold text-center block"
                 >
                   Get Your Instance
@@ -224,8 +237,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-
-
       {/* CTA Section */}
       <section className="py-20 bg-gray-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -233,10 +244,10 @@ export default function LandingPage() {
             Ready to Transform Your Property Management?
           </h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join hundreds of property owners who have streamlined their operations with DarManager
+            Join forward-thinking property owners who are streamlining their operations with DarManager
           </p>
           <a
-            href="mailto:contact@darmanager.com?subject=DarManager Partnership"
+            href="mailto:info@darmanager.net?subject=DarManager Partnership"
             className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 font-semibold text-lg"
           >
             Partner With Us Today
@@ -253,9 +264,13 @@ export default function LandingPage() {
                 <BuildingOfficeIcon className="h-6 w-6 text-blue-600 mr-2" />
                 <span className="text-xl font-bold text-gray-900">DarManager</span>
               </div>
-              <p className="text-gray-600">
-                The leading property management platform for modern hospitality businesses.
+              <p className="text-gray-600 mb-4">
+                The modern property management platform for hospitality businesses.
               </p>
+              <div className="flex items-center text-sm text-gray-600">
+                <MapPinIcon className="h-4 w-4 mr-2" />
+                <span>Beirut, Lebanon</span>
+              </div>
             </div>
             
             <div>
@@ -263,7 +278,7 @@ export default function LandingPage() {
               <ul className="space-y-2 text-gray-600">
                 <li><a href="#" className="hover:text-blue-600">Features</a></li>
                 <li><a href="#" className="hover:text-blue-600">Pricing</a></li>
-                <li><a href="#" className="hover:text-blue-600">Demo</a></li>
+                <li><a href="mailto:info@darmanager.net?subject=Demo Request" className="hover:text-blue-600">Demo</a></li>
               </ul>
             </div>
             
@@ -272,7 +287,7 @@ export default function LandingPage() {
               <ul className="space-y-2 text-gray-600">
                 <li><a href="#" className="hover:text-blue-600">Help Center</a></li>
                 <li><a href="#" className="hover:text-blue-600">Documentation</a></li>
-                <li><a href="#" className="hover:text-blue-600">Contact</a></li>
+                <li><a href="mailto:info@darmanager.net" className="hover:text-blue-600">Contact</a></li>
               </ul>
             </div>
             
@@ -281,11 +296,15 @@ export default function LandingPage() {
               <div className="space-y-2 text-gray-600">
                 <div className="flex items-center">
                   <EnvelopeIcon className="h-4 w-4 mr-2" />
-                  <span>support@darmanager.com</span>
+                  <span>info@darmanager.net</span>
                 </div>
                 <div className="flex items-center">
                   <PhoneIcon className="h-4 w-4 mr-2" />
-                  <span>+961 XX XXX XXX</span>
+                  <span>+357 96 608 711</span>
+                </div>
+                <div className="flex items-center">
+                  <PhoneIcon className="h-4 w-4 mr-2" />
+                  <span>+961 71 067 522</span>
                 </div>
               </div>
             </div>
