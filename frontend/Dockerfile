@@ -4,14 +4,14 @@ FROM node:18-alpine AS base
 WORKDIR /app
 
 # Install dependencies
-COPY package*.json ./
-RUN npm ci --only=production
+COPY package.json ./
+RUN npm install --production
 
 # Build stage
 FROM base AS builder
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+COPY package.json ./
+RUN npm install
 COPY . .
 # Build the Next.js application
 RUN npm run build
