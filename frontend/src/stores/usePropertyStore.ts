@@ -5,7 +5,7 @@
 
 import { create } from 'zustand';
 import { Property, PropertyCreate } from '@/types';
-import { apiClient } from '@/lib/api/client';
+import { apiClient } from '@/lib/api-client';
 
 interface PropertyState {
   properties: Property[];

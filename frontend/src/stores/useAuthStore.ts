@@ -6,7 +6,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, LoginCredentials, AuthTokens } from '@/types';
-import { apiClient } from '@/lib/api/client';
+import { apiClient } from '@/lib/api-client';
 
 interface AuthState {
   user: User | null;
